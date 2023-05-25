@@ -32,10 +32,10 @@ class CognitiveControl(object):
     def Update(self,LingKnow,Stoop):
         # increase CM activity based on the relative ratio between SubjIsAgent & SubjIsTheme
         if LingKnow.SubjIsAgent+LingKnow.SubjIsTheme > 0:
-            self.ConflictMonitoring += ActivationRate*1/(abs(LingKnow.SubjIsAgent-LingKnow.SubjIsTheme)/statistics.mean([LingKnow.SubjIsAgent,LingKnow.SubjIsTheme]))
+            self.ConflictMonitoring += ActivationRate*10/(abs(LingKnow.SubjIsAgent-LingKnow.SubjIsTheme)/statistics.mean([LingKnow.SubjIsAgent,LingKnow.SubjIsTheme]))
         # increase CM activity based on the relative ratio between Blue & Red
         if Stroop.Blue+Stroop.Red > 0:
-            self.ConflictMonitoring += ActivationRate*1/(abs(Stroop.Blue-Stroop.Red)/statistics.mean([Stroop.Blue,Stroop.Red]))
+            self.ConflictMonitoring += ActivationRate*10/(abs(Stroop.Blue-Stroop.Red)/statistics.mean([Stroop.Blue,Stroop.Red]))
         # increase B activation based on CM activation
         self.Biasing += ActivationRate*self.ConflictMonitoring       
         # decay
@@ -245,6 +245,8 @@ def RunTrial(InputAct:tuple,CC=None,LK=None,S=None):
 
     LingKnow.InputAct(InputAct[0],InputAct[1],InputAct[2])
     Stroop.InputAct(InputAct[3],InputAct[4],InputAct[5])
+    
+    print('BiasingMult = %2d' % BiasingMult)
 
     while i <= MaxIter:
         UpdateAll(CogCtrl,LingKnow,Stroop)
@@ -330,7 +332,7 @@ app.layout = html.Div([
         dcc.Input(id='inhibition-rate', type='number', value=0.1),
         html.Span(style={'margin-right': '40px'}),
         html.Label("Biasing Multiplier  "),
-        dcc.Input(id='biasing-mult', type='number', value=0.000001),
+        dcc.Input(id='biasing-mult', type='number', value=0.01),
         html.Br(),
         html.Label("Maximum Iterations  "),
         dcc.Input(id='max-iter', type='number', value=10000),
@@ -420,16 +422,15 @@ def run_simulation(n_clicks, decay_rate, control_decay_rate, activation_rate, in
     global RepresetationsDecayRate, CognitiveControlDecayRate, ActivationRate, InhibitionRate, BiasingMult, MaxIter, ActivationThreshold, BetweenTrialsInterval, CongruentStroop, IncongruentStroop, CongruentSentence, AnomalousSentence
     RepresetationsDecayRate, CognitiveControlDecayRate, ActivationRate, InhibitionRate, BiasingMult, MaxIter, ActivationThreshold, BetweenTrialsInterval, CongruentStroop, IncongruentStroop, CongruentSentence, AnomalousSentence = decay_rate, control_decay_rate, activation_rate, inhibition_rate, biasing_mult, max_iter, activation_threshold, between_trials_interval, input_congruent_stroop, input_incongruent_stroop, input_congruent_sentence, input_anomalous_sentence
 
-    #ArgList = [RepresetationsDecayRate, CognitiveControlDecayRate, ActivationRate, InhibitionRate, BiasingMult,
-    #                   max_iter, ActivationThreshold, BetweenTrialsInterval,
-    #                   CongruentStroop, IncongruentStroop, CongruentSentence, AnomalousSentence]
     iteration_graph = CreatFig_WithWithoutCC_Stroop()
     accuracy_graph = CreatFig_WithWithoutCC_Lang()
     reaction_time_graph = CreatFig_CrossTaskAdapt()
     return iteration_graph, accuracy_graph, reaction_time_graph
 
 
-def CreatFig_WithWithoutCC_Stroop(*args):
+def CreatFig_WithWithoutCC_Stroop():
+    global BiasingMult
+    UserBiasingMult = BiasingMult
     # Congruent Stroop trial with BiasingMult = 0
     BiasingMult = 0
     i, Winner, CogCtrl, LingKnow, Stroop = RunTrial(CongruentStroop)
@@ -437,7 +438,7 @@ def CreatFig_WithWithoutCC_Stroop(*args):
     print(i, Winner)
 
     # Congruent Stroop trial with BiasingMult = 1
-    BiasingMult = 1
+    BiasingMult = UserBiasingMult
     i, Winner, CogCtrl, LingKnow, Stroop = RunTrial(CongruentStroop)
     RT_CongStroop_WithCC = i
     print(i, Winner)
@@ -449,7 +450,7 @@ def CreatFig_WithWithoutCC_Stroop(*args):
     print(i, Winner)
 
     # Incongruent Stroop trial with BiasingMult = 1
-    BiasingMult = 1
+    BiasingMult = UserBiasingMult
     i, Winner, CogCtrl, LingKnow, Stroop = RunTrial(IncongruentStroop)
     RT_IncongStroop_WithCC = i
     print(i, Winner)
@@ -462,7 +463,9 @@ def CreatFig_WithWithoutCC_Stroop(*args):
     fig = px.bar(df,x='Trial',y='RT',color='CC',barmode="group")
     return fig
 
-def CreatFig_WithWithoutCC_Lang(*args):
+def CreatFig_WithWithoutCC_Lang():
+    global BiasingMult
+    UserBiasingMult = BiasingMult
     # Control sentence trial with BiasingMult = 0
     BiasingMult = 0
     i, Winner, CogCtrl, LingKnow, Stroop = RunTrial(CongruentSentence)
@@ -470,7 +473,7 @@ def CreatFig_WithWithoutCC_Lang(*args):
     print(i, Winner)
 
     # control sentence trial with BiasingMult = 1
-    BiasingMult = 1
+    BiasingMult = UserBiasingMult
     i, Winner, CogCtrl, LingKnow, Stroop = RunTrial(CongruentSentence)
     RT_CongLang_WithCC = i
     print(i, Winner)
@@ -482,7 +485,7 @@ def CreatFig_WithWithoutCC_Lang(*args):
     print(i, Winner)
 
     # Anomalous sentence trial with BiasingMult = 1
-    BiasingMult = 1
+    BiasingMult = UserBiasingMult
     i, Winner, CogCtrl, LingKnow, Stroop = RunTrial(AnomalousSentence)
     RT_AnomLang_WithCC = i
     print(i, Winner)
@@ -495,7 +498,7 @@ def CreatFig_WithWithoutCC_Lang(*args):
     fig = px.bar(df,x='Trial',y='RT',color='CC',barmode="group")
     return fig
 
-def CreatFig_CrossTaskAdapt(*args):
+def CreatFig_CrossTaskAdapt():
     # A Congruent Stroop -> Control Sentence sequence
     Results = RunTrialSequence((CongruentStroop,CongruentSentence))
     RT_CongCong = Results[1][0]
