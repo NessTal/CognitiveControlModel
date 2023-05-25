@@ -222,6 +222,9 @@ def RunTrial(InputAct:tuple,CC=None,LK=None,S=None):
     InputAct specifies the input activations for WK,MSK_ing,MSK_ed,Text_blue,Text_red,FontColor (in that order).
     '''
     i = 1
+    ActivationLevels = {'ConfMon':[],'Biasing':[],
+                        'WK':[],'MSK_ing':[],'MSK_ed':[],'SubjIsAgent':[],'SubjIsTheme':[],
+                       'FontColor':[],'Text_blue':[],'Text_red':[],'Blue':[],'Red':[]}
 
     global CogCtrl
     global LingKnow
@@ -245,11 +248,22 @@ def RunTrial(InputAct:tuple,CC=None,LK=None,S=None):
 
     LingKnow.InputAct(InputAct[0],InputAct[1],InputAct[2])
     Stroop.InputAct(InputAct[3],InputAct[4],InputAct[5])
+
+    NodesDict = {'ConfMon':CogCtrl.ConflictMonitoring,'Biasing':CogCtrl.Biasing,
+                        'WK':LingKnow.WorldKnowledge,'MSK_ing':LingKnow.MorphoSyntacticKnowledge_ing,'MSK_ed':LingKnow.MorphoSyntacticKnowledge_ed,'SubjIsAgent':LingKnow.SubjIsAgent,'SubjIsTheme':LingKnow.SubjIsTheme,
+                       'FontColor':Stroop.FontColor,'Text_blue':Stroop.Text_blue,'Text_red':Stroop.Text_red,'Blue':Stroop.Blue,'Red':Stroop.Red}
+    for key in ActivationLevels.keys():
+        ActivationLevels[key].append(NodesDict[key])
     
     print('BiasingMult = %2d' % BiasingMult)
 
     while i <= MaxIter:
         UpdateAll(CogCtrl,LingKnow,Stroop)
+        NodesDict = {'ConfMon':CogCtrl.ConflictMonitoring,'Biasing':CogCtrl.Biasing,
+                        'WK':LingKnow.WorldKnowledge,'MSK_ing':LingKnow.MorphoSyntacticKnowledge_ing,'MSK_ed':LingKnow.MorphoSyntacticKnowledge_ed,'SubjIsAgent':LingKnow.SubjIsAgent,'SubjIsTheme':LingKnow.SubjIsTheme,
+                       'FontColor':Stroop.FontColor,'Text_blue':Stroop.Text_blue,'Text_red':Stroop.Text_red,'Blue':Stroop.Blue,'Red':Stroop.Red}
+        for key in ActivationLevels.keys():
+            ActivationLevels[key].append(NodesDict[key])
         i += 1
         MaxAct = max(LingKnow.SubjIsAgent,LingKnow.SubjIsTheme,Stroop.Blue,Stroop.Red)
         if MaxAct > ActivationThreshold:
@@ -267,7 +281,7 @@ def RunTrial(InputAct:tuple,CC=None,LK=None,S=None):
     if Stroop.Red == MaxAct:
         Winner = 'Red'
     
-    return i, Winner, CogCtrl, LingKnow, Stroop
+    return i, Winner, CogCtrl, LingKnow, Stroop, ActivationLevels
 
 
 def RunTrialSequence(Trials:"list of tuples"):
@@ -284,8 +298,8 @@ def RunTrialSequence(Trials:"list of tuples"):
         CogCtrl = CogCtrl.BetweenTrialsDecay()
         LingKnow = LingKnow.BetweenTrialsDecay()
         Stroop = Stroop.BetweenTrialsDecay()
-        i, Winner, CogCtrl, LingKnow, Stroop = RunTrial(Trial,CogCtrl,LingKnow,Stroop)
-        Results.append([i,Winner])
+        i, Winner, CogCtrl, LingKnow, Stroop, Activations = RunTrial(Trial,CogCtrl,LingKnow,Stroop)
+        Results.append([i,Winner,Activations])
         
     return Results
 
@@ -379,15 +393,28 @@ app.layout = html.Div([
     ]),
     html.Div([
         html.H3("Simulation Results"),
-        html.Div([
-            dcc.Graph(id='iteration-graph')
-        ], style={'width': '50%', 'display': 'inline-block'}),
-        html.Div([
-            dcc.Graph(id='accuracy-graph')
-        ], style={'width': '50%', 'display': 'inline-block'}),
-    html.Div(
-        dcc.Graph(id='reaction-time-graph'),
-        style={'width': '50%', 'margin': '0 auto'})
+        html.Div([dcc.Graph(id='iteration-graph')],
+                 style={'width': '50%', 'display': 'inline-block'}),
+        html.Div([dcc.Graph(id='accuracy-graph')],
+                 style={'width': '50%', 'display': 'inline-block'}),
+        html.Div(dcc.Graph(id='reaction-time-graph'),
+                 style={'width': '50%', 'margin': '0 auto'}),
+        html.Label("Activation plots - Congruent sentence:"),
+        html.Br(),
+        html.Div([dcc.Graph(id='activ-cong-bias-graph')],
+                 style={'width': '33%', 'display': 'inline-block'}),
+        html.Div([dcc.Graph(id='activ-cong-agent-graph')],
+                 style={'width': '33%', 'display': 'inline-block'}),
+        html.Div([dcc.Graph(id='activ-cong-theme-graph')],
+                 style={'width': '33%', 'display': 'inline-block'}),
+        html.Label("Activation plots - Congruent sentence:"),
+        html.Br(),
+        html.Div([dcc.Graph(id='activ-incong-bias-graph')],
+                 style={'width': '33%', 'display': 'inline-block'}),
+        html.Div([dcc.Graph(id='activ-incong-agent-graph')],
+                 style={'width': '33%', 'display': 'inline-block'}),
+        html.Div([dcc.Graph(id='activ-incong-theme-graph')],
+                 style={'width': '33%', 'display': 'inline-block'}),
     ])
 ])
 
@@ -396,7 +423,13 @@ app.layout = html.Div([
 @app.callback(
     [Output('iteration-graph', 'figure'),
      Output('accuracy-graph', 'figure'),
-     Output('reaction-time-graph', 'figure')],
+     Output('reaction-time-graph', 'figure'),
+     Output('activ-cong-bias-graph', 'figure'),
+     Output('activ-cong-agent-graph', 'figure'),
+     Output('activ-cong-theme-graph', 'figure'),
+     Output('activ-incong-bias-graph', 'figure'),
+     Output('activ-incong-agent-graph', 'figure'),
+     Output('activ-incong-theme-graph', 'figure')],
     [Input('run-button', 'n_clicks')],
     [State('decay-rate', 'value'),
      State('control-decay-rate', 'value'),
@@ -422,36 +455,36 @@ def run_simulation(n_clicks, decay_rate, control_decay_rate, activation_rate, in
     global RepresetationsDecayRate, CognitiveControlDecayRate, ActivationRate, InhibitionRate, BiasingMult, MaxIter, ActivationThreshold, BetweenTrialsInterval, CongruentStroop, IncongruentStroop, CongruentSentence, AnomalousSentence
     RepresetationsDecayRate, CognitiveControlDecayRate, ActivationRate, InhibitionRate, BiasingMult, MaxIter, ActivationThreshold, BetweenTrialsInterval, CongruentStroop, IncongruentStroop, CongruentSentence, AnomalousSentence = decay_rate, control_decay_rate, activation_rate, inhibition_rate, biasing_mult, max_iter, activation_threshold, between_trials_interval, input_congruent_stroop, input_incongruent_stroop, input_congruent_sentence, input_anomalous_sentence
 
-    iteration_graph = CreatFig_WithWithoutCC_Stroop()
-    accuracy_graph = CreatFig_WithWithoutCC_Lang()
-    reaction_time_graph = CreatFig_CrossTaskAdapt()
-    return iteration_graph, accuracy_graph, reaction_time_graph
+    iteration_graph = CreateFig_WithWithoutCC_Stroop()
+    accuracy_graph,act_cong_bias_graph,act_cong_agent_graph,act_cong_theme_graph,act_incong_bias_graph,act_incong_agent_graph,act_incong_theme_graph = CreateFig_WithWithoutCC_Lang()
+    reaction_time_graph = CreateFig_CrossTaskAdapt()
+    return iteration_graph, accuracy_graph, reaction_time_graph, act_cong_bias_graph,act_cong_agent_graph,act_cong_theme_graph,act_incong_bias_graph,act_incong_agent_graph,act_incong_theme_graph
 
 
-def CreatFig_WithWithoutCC_Stroop():
+def CreateFig_WithWithoutCC_Stroop():
     global BiasingMult
     UserBiasingMult = BiasingMult
     # Congruent Stroop trial with BiasingMult = 0
     BiasingMult = 0
-    i, Winner, CogCtrl, LingKnow, Stroop = RunTrial(CongruentStroop)
+    i, Winner, CogCtrl, LingKnow, Stroop, Activations = RunTrial(CongruentStroop)
     RT_CongStroop_NoCC = i
     print(i, Winner)
 
     # Congruent Stroop trial with BiasingMult = 1
     BiasingMult = UserBiasingMult
-    i, Winner, CogCtrl, LingKnow, Stroop = RunTrial(CongruentStroop)
+    i, Winner, CogCtrl, LingKnow, Stroop, Activations = RunTrial(CongruentStroop)
     RT_CongStroop_WithCC = i
     print(i, Winner)
 
     # Inongruent Stroop trial with BiasingMult = 0
     BiasingMult = 0
-    i, Winner, CogCtrl, LingKnow, Stroop = RunTrial(IncongruentStroop)
+    i, Winner, CogCtrl, LingKnow, Stroop, Activations = RunTrial(IncongruentStroop)
     RT_IncongStroop_NoCC = i
     print(i, Winner)
 
     # Incongruent Stroop trial with BiasingMult = 1
     BiasingMult = UserBiasingMult
-    i, Winner, CogCtrl, LingKnow, Stroop = RunTrial(IncongruentStroop)
+    i, Winner, CogCtrl, LingKnow, Stroop, Activations = RunTrial(IncongruentStroop)
     RT_IncongStroop_WithCC = i
     print(i, Winner)
 
@@ -463,31 +496,33 @@ def CreatFig_WithWithoutCC_Stroop():
     fig = px.bar(df,x='Trial',y='RT',color='CC',barmode="group")
     return fig
 
-def CreatFig_WithWithoutCC_Lang():
+def CreateFig_WithWithoutCC_Lang():
     global BiasingMult
     UserBiasingMult = BiasingMult
     # Control sentence trial with BiasingMult = 0
     BiasingMult = 0
-    i, Winner, CogCtrl, LingKnow, Stroop = RunTrial(CongruentSentence)
+    i, Winner, CogCtrl, LingKnow, Stroop, Activations = RunTrial(CongruentSentence)
     RT_CongLang_NoCC = i
     print(i, Winner)
 
     # control sentence trial with BiasingMult = 1
     BiasingMult = UserBiasingMult
-    i, Winner, CogCtrl, LingKnow, Stroop = RunTrial(CongruentSentence)
+    i, Winner, CogCtrl, LingKnow, Stroop, Activations = RunTrial(CongruentSentence)
     RT_CongLang_WithCC = i
+    ActivationsCong = Activations
     print(i, Winner)
 
     # Anomalous sentence trial with BiasingMult = 0
     BiasingMult = 0
-    i, Winner, CogCtrl, LingKnow, Stroop = RunTrial(AnomalousSentence)
+    i, Winner, CogCtrl, LingKnow, Stroop, Activations = RunTrial(AnomalousSentence)
     RT_AnomLang_NoCC = i
     print(i, Winner)
 
     # Anomalous sentence trial with BiasingMult = 1
     BiasingMult = UserBiasingMult
-    i, Winner, CogCtrl, LingKnow, Stroop = RunTrial(AnomalousSentence)
+    i, Winner, CogCtrl, LingKnow, Stroop, Activations = RunTrial(AnomalousSentence)
     RT_AnomLang_WithCC = i
+    ActivationsIncong = Activations
     print(i, Winner)
 
     # Figure
@@ -495,29 +530,37 @@ def CreatFig_WithWithoutCC_Lang():
                        'Trial':['Congruent','Congruent','Anomaly','Anomaly'],
                        'RT':[RT_CongLang_NoCC,RT_CongLang_WithCC,RT_AnomLang_NoCC,RT_AnomLang_WithCC]})
 
-    fig = px.bar(df,x='Trial',y='RT',color='CC',barmode="group")
-    return fig
+    fig_WithWithout = px.bar(df,x='Trial',y='RT',color='CC',barmode="group")
 
-def CreatFig_CrossTaskAdapt():
+    fig_Cong_Bias = px.scatter(x=range(1,len(ActivationsCong['Biasing'])+1),y=ActivationsCong['Biasing'])
+    fig_Cong_Agent = px.scatter(x=range(1,len(ActivationsCong['SubjIsAgent'])+1),y=ActivationsCong['SubjIsAgent'])
+    fig_Cong_Theme = px.scatter(x=range(1,len(ActivationsCong['SubjIsTheme'])+1),y=ActivationsCong['SubjIsTheme'])
+    fig_Incong_Bias = px.scatter(x=range(1,len(ActivationsIncong['Biasing'])+1),y=ActivationsIncong['Biasing'])
+    fig_Incong_Agent = px.scatter(x=range(1,len(ActivationsIncong['SubjIsAgent'])+1),y=ActivationsIncong['SubjIsAgent'])
+    fig_Incong_Theme = px.scatter(x=range(1,len(ActivationsIncong['SubjIsTheme'])+1),y=ActivationsIncong['SubjIsTheme'])
+
+    return fig_WithWithout, fig_Cong_Bias,fig_Cong_Agent,fig_Cong_Theme, fig_Incong_Bias,fig_Incong_Agent,fig_Incong_Theme
+
+def CreateFig_CrossTaskAdapt():
     # A Congruent Stroop -> Control Sentence sequence
     Results = RunTrialSequence((CongruentStroop,CongruentSentence))
     RT_CongCong = Results[1][0]
-    print(Results)
+    print([(r[0],r[1]) for r in Results])
 
     # An Inongruent Stroop -> Control Sentence sequence
     Results = RunTrialSequence((IncongruentStroop,CongruentSentence))
     RT_IncongCong = Results[1][0]
-    print(Results)
+    print([(r[0],r[1]) for r in Results])
 
     # A Congruent Stroop -> Anomalous Sentence sequence
     Results = RunTrialSequence((CongruentStroop,AnomalousSentence))
     RT_CongAnom = Results[1][0]
-    print(Results)
+    print([(r[0],r[1]) for r in Results])
 
     # An Incongruent Stroop -> Anomalous Sentence sequence
     Results = RunTrialSequence((IncongruentStroop,AnomalousSentence))
     RT_IncongAnom = Results[1][0]
-    print(Results)
+    print([(r[0],r[1]) for r in Results])
 
     # Figure
     df = pd.DataFrame({'PrevStroop':['Congruent','Incongruent','Congruent','Incongruent'],
