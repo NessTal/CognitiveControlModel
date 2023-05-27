@@ -1,14 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Wed May 24 21:59:24 2023
-
-@author: talness
-"""
-
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
 Created on Wed May 24 21:37:24 2023
 @author: talness
 """
@@ -407,7 +399,7 @@ app.layout = html.Div([
                  style={'width': '33%', 'display': 'inline-block'}),
         html.Div([dcc.Graph(id='activ-cong-theme-graph')],
                  style={'width': '33%', 'display': 'inline-block'}),
-        html.Label("Activation plots - Congruent sentence:"),
+        html.Label("Activation plots - Incongruent sentence:"),
         html.Br(),
         html.Div([dcc.Graph(id='activ-incong-bias-graph')],
                  style={'width': '33%', 'display': 'inline-block'}),
