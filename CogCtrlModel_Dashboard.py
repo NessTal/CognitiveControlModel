@@ -22,14 +22,14 @@ class CognitiveControl(object):
         self.Biasing = 0
  
     def Update(self,LingKnow,Stoop):
-        # increase CM activity based on the relative ratio between SubjIsAgent & SubjIsTheme
+        # increase CM activity based on the ratio between SubjIsAgent & SubjIsTheme
         if LingKnow.SubjIsAgent+LingKnow.SubjIsTheme > 0:
-            self.ConflictMonitoring += ActivationRate*10/(abs(LingKnow.SubjIsAgent-LingKnow.SubjIsTheme)/statistics.mean([LingKnow.SubjIsAgent,LingKnow.SubjIsTheme]))
-        # increase CM activity based on the relative ratio between Blue & Red
+            self.ConflictMonitoring += ActivationRate*1/(abs(LingKnow.SubjIsAgent-LingKnow.SubjIsTheme))
+        # increase CM activity based on the ratio between Blue & Red
         if Stroop.Blue+Stroop.Red > 0:
-            self.ConflictMonitoring += ActivationRate*10/(abs(Stroop.Blue-Stroop.Red)/statistics.mean([Stroop.Blue,Stroop.Red]))
+            self.ConflictMonitoring += ActivationRate*1/(abs(Stroop.Blue-Stroop.Red))
         # increase B activation based on CM activation
-        self.Biasing += ActivationRate*self.ConflictMonitoring       
+        self.Biasing += MonitorBiasActivationRate*self.ConflictMonitoring       
         # decay
         self.ConflictMonitoring -= CognitiveControlDecayRate
         self.Biasing -= CognitiveControlDecayRate      
@@ -334,6 +334,9 @@ app.layout = html.Div([
         html.Label("Activation Rate  "),
         dcc.Input(id='activation-rate', type='number', value=0.1),
         html.Span(style={'margin-right': '40px'}),
+        html.Label("Monitoring to Biasing Activation Rate  "),
+        dcc.Input(id='monitor-bias-activation-rate', type='number', value=1),
+        html.Span(style={'margin-right': '40px'}),
         html.Label("Inhibition Rate  "),
         dcc.Input(id='inhibition-rate', type='number', value=0.1),
         html.Span(style={'margin-right': '40px'}),
@@ -426,6 +429,7 @@ app.layout = html.Div([
     [State('decay-rate', 'value'),
      State('control-decay-rate', 'value'),
      State('activation-rate', 'value'),
+     State('monitor-bias-activation-rate', 'value'),
      State('inhibition-rate', 'value'),
      State('biasing-mult', 'value'),
      State('max-iter', 'value'),
@@ -435,7 +439,7 @@ app.layout = html.Div([
      State('input-incongruent-stroop', 'value'),
      State('input-congruent-sentence', 'value'),
      State('input-anomalous-sentence', 'value')])
-def run_simulation(n_clicks, decay_rate, control_decay_rate, activation_rate, inhibition_rate, biasing_mult,
+def run_simulation(n_clicks, decay_rate, control_decay_rate, activation_rate, monitor_bias_activation_rate, inhibition_rate, biasing_mult,
                    max_iter, activation_threshold, between_trials_interval,
                    input_congruent_stroop, input_incongruent_stroop, input_congruent_sentence, input_anomalous_sentence):
 
@@ -444,8 +448,8 @@ def run_simulation(n_clicks, decay_rate, control_decay_rate, activation_rate, in
     input_congruent_sentence = tuple(map(int,input_congruent_sentence.split(',')))
     input_anomalous_sentence = tuple(map(int,input_anomalous_sentence.split(',')))
 
-    global RepresetationsDecayRate, CognitiveControlDecayRate, ActivationRate, InhibitionRate, BiasingMult, MaxIter, ActivationThreshold, BetweenTrialsInterval, CongruentStroop, IncongruentStroop, CongruentSentence, AnomalousSentence
-    RepresetationsDecayRate, CognitiveControlDecayRate, ActivationRate, InhibitionRate, BiasingMult, MaxIter, ActivationThreshold, BetweenTrialsInterval, CongruentStroop, IncongruentStroop, CongruentSentence, AnomalousSentence = decay_rate, control_decay_rate, activation_rate, inhibition_rate, biasing_mult, max_iter, activation_threshold, between_trials_interval, input_congruent_stroop, input_incongruent_stroop, input_congruent_sentence, input_anomalous_sentence
+    global RepresetationsDecayRate, CognitiveControlDecayRate, ActivationRate, MonitorBiasActivationRate, InhibitionRate, BiasingMult, MaxIter, ActivationThreshold, BetweenTrialsInterval, CongruentStroop, IncongruentStroop, CongruentSentence, AnomalousSentence
+    RepresetationsDecayRate, CognitiveControlDecayRate, ActivationRate, MonitorBiasActivationRate, InhibitionRate, BiasingMult, MaxIter, ActivationThreshold, BetweenTrialsInterval, CongruentStroop, IncongruentStroop, CongruentSentence, AnomalousSentence = decay_rate, control_decay_rate, activation_rate, monitor_bias_activation_rate ,inhibition_rate, biasing_mult, max_iter, activation_threshold, between_trials_interval, input_congruent_stroop, input_incongruent_stroop, input_congruent_sentence, input_anomalous_sentence
 
     iteration_graph = CreateFig_WithWithoutCC_Stroop()
     accuracy_graph,act_cong_bias_graph,act_cong_agent_graph,act_cong_theme_graph,act_incong_bias_graph,act_incong_agent_graph,act_incong_theme_graph = CreateFig_WithWithoutCC_Lang()
