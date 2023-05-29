@@ -281,15 +281,17 @@ def RunTrialSequence(Trials:"list of tuples"):
     Trials is a list of tuples.
     Each tuple consists of 4 values that are the input activations of WK,MSK_ing,MSK_ed,Text_blue,Text_red,FontColor (in that order) in a specific trial.
     '''
+    global CogCtrl, LingKnow, Stroop
+
     CogCtrl = CognitiveControl()
     LingKnow = LinguisticKnowledge()
     Stroop = StroopTaskRepresentation()
     
     Results = []
     for Trial in Trials:
-        CogCtrl = CogCtrl.BetweenTrialsDecay()
-        LingKnow = LingKnow.BetweenTrialsDecay()
-        Stroop = Stroop.BetweenTrialsDecay()
+        CogCtrl.BetweenTrialsDecay()
+        LingKnow.BetweenTrialsDecay()
+        Stroop.BetweenTrialsDecay()
         i, Winner, CogCtrl, LingKnow, Stroop, Activations = RunTrial(Trial,CogCtrl,LingKnow,Stroop)
         Results.append([i,Winner,Activations])
         
