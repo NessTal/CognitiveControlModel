@@ -11,7 +11,6 @@ import dash.html as html
 from dash.dependencies import Input, Output, State
 import plotly.express as px
 import pandas as pd
-import statistics
 import copy
 
 # The model:
