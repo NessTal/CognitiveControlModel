@@ -33,12 +33,16 @@ def CreateFig_WithWithoutCC_Stroop(params):
     print(i, Winner)
 
     # Figure
-    df = pd.DataFrame({'CC':['Without CC','With CC','Without CC','With CC'],
+    df = pd.DataFrame({'CC':['Without','With','Without','With'],
                        'Trial':['Congruent','Congruent','Incongruent','Incongruent'],
                        'RT':[RT_CongStroop_NoCC,RT_CongStroop_WithCC,RT_IncongStroop_NoCC,RT_IncongStroop_WithCC]})
 
-    fig = px.bar(df,x='Trial',y='RT',color='CC',barmode="group")
+    fig = px.bar(df,x='Trial',y='RT',color='CC',barmode="group",
+                 title = "Stroop trials with vs. without cognitive control",
+                 labels = {"Trial" : "Trial Type", "RT": "Reaction time (iterations)", "CC" : "Cognitive Control"})
+    fig.update_layout(title_x = 0.5)
     return fig
+
 
 def CreateFig_WithWithoutCC_Lang(params):
     RepresetationsDecayRate, CognitiveControlDecayRate, ActivationRate, MonitorBiasActivationRate, InhibitionRate, BiasingMult, MaxIter, ActivationThreshold, BetweenTrialsInterval, CongruentStroop, IncongruentStroop, CongruentSentence, AnomalousSentence = params
@@ -72,18 +76,33 @@ def CreateFig_WithWithoutCC_Lang(params):
     print(i, Winner)
 
     # Figure
-    df = pd.DataFrame({'CC':['Without CC','With CC','Without CC','With CC'],
+    df = pd.DataFrame({'CC':['Without','With','Without','With'],
                        'Trial':['Congruent','Congruent','Anomaly','Anomaly'],
                        'RT':[RT_CongLang_NoCC,RT_CongLang_WithCC,RT_AnomLang_NoCC,RT_AnomLang_WithCC]})
 
-    fig_WithWithout = px.bar(df,x='Trial',y='RT',color='CC',barmode="group")
-
-    fig_Cong_Bias = px.scatter(x=range(1,len(ActivationsCong['Biasing'])+1),y=ActivationsCong['Biasing'])
-    fig_Cong_Agent = px.scatter(x=range(1,len(ActivationsCong['SubjIsAgent'])+1),y=ActivationsCong['SubjIsAgent'])
-    fig_Cong_Theme = px.scatter(x=range(1,len(ActivationsCong['SubjIsTheme'])+1),y=ActivationsCong['SubjIsTheme'])
-    fig_Incong_Bias = px.scatter(x=range(1,len(ActivationsIncong['Biasing'])+1),y=ActivationsIncong['Biasing'])
-    fig_Incong_Agent = px.scatter(x=range(1,len(ActivationsIncong['SubjIsAgent'])+1),y=ActivationsIncong['SubjIsAgent'])
-    fig_Incong_Theme = px.scatter(x=range(1,len(ActivationsIncong['SubjIsTheme'])+1),y=ActivationsIncong['SubjIsTheme'])
+    fig_WithWithout = px.bar(df,x='Trial',y='RT',color='CC',barmode="group",
+                             title = "Linguistic trials with vs. without cognitive control",
+                             labels = {"Trial" : "Sentence Type", "RT": "Reaction time (iterations)", "CC" : "Cognitive Control"})
+    fig_WithWithout.update_layout(title_x = 0.5)
+    
+    fig_Cong_Bias = px.scatter(x=range(1,len(ActivationsCong['Biasing'])+1),y=ActivationsCong['Biasing'],
+                               title = "Cognitive control - Biasing unit")
+    fig_Cong_Bias.update_layout(xaxis_title = "Time (iterations)",yaxis_title = "Activation level",title_x = 0.5)
+    fig_Cong_Agent = px.scatter(x=range(1,len(ActivationsCong['SubjIsAgent'])+1),y=ActivationsCong['SubjIsAgent'],
+                               title = "Linguistic - Subject is Agent")
+    fig_Cong_Agent.update_layout(xaxis_title = "Time (iterations)",yaxis_title = "Activation level",title_x = 0.5)
+    fig_Cong_Theme = px.scatter(x=range(1,len(ActivationsCong['SubjIsTheme'])+1),y=ActivationsCong['SubjIsTheme'],
+                               title = "Linguistic - Subject is Theme")
+    fig_Cong_Theme.update_layout(xaxis_title = "Time (iterations)",yaxis_title = "Activation level",title_x = 0.5)
+    fig_Incong_Bias = px.scatter(x=range(1,len(ActivationsIncong['Biasing'])+1),y=ActivationsIncong['Biasing'],
+                               title = "Cognitive control - Biasing unit")
+    fig_Incong_Bias.update_layout(xaxis_title = "Time (iterations)",yaxis_title = "Activation level",title_x = 0.5)
+    fig_Incong_Agent = px.scatter(x=range(1,len(ActivationsIncong['SubjIsAgent'])+1),y=ActivationsIncong['SubjIsAgent'],
+                               title = "Linguistic - Subject is Agent")
+    fig_Incong_Agent.update_layout(xaxis_title = "Time (iterations)",yaxis_title = "Activation level",title_x = 0.5)
+    fig_Incong_Theme = px.scatter(x=range(1,len(ActivationsIncong['SubjIsTheme'])+1),y=ActivationsIncong['SubjIsTheme'],
+                               title = "Linguistic - Subject is Theme")
+    fig_Incong_Theme.update_layout(xaxis_title = "Time (iterations)",yaxis_title = "Activation level",title_x = 0.5)
 
     return fig_WithWithout, fig_Cong_Bias,fig_Cong_Agent,fig_Cong_Theme, fig_Incong_Bias,fig_Incong_Agent,fig_Incong_Theme
 
@@ -115,6 +134,10 @@ def CreateFig_CrossTaskAdapt(params):
                        'Trial':['Congruent','Congruent','Anomaly','Anomaly'],
                        'RT':[RT_CongCong,RT_IncongCong,RT_CongAnom,RT_IncongAnom]})
 
-    fig = px.bar(df,x='PrevStroop',y='RT',color='Trial',barmode="group")
+    fig = px.bar(df,x='PrevStroop',y='RT',color='Trial',barmode="group",
+                 title = "Linguistic trials when preceding stroop trial is congruent vs. incongruent",
+                 labels = {"PrevStroop":"Preceding Stroop", "RT": "Reaction time (iterations)","Trial" : "Sentence Type"})
+    fig.update_layout(title_x = 0.5)
+    
     return fig
 
