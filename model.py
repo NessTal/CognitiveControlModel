@@ -270,6 +270,7 @@ def RunTrialSequence(Trials:"list of tuples",params):
     Trials is a list of tuples.
     Each tuple consists of 4 values that are the input activations of WK,MSK_ing,MSK_ed,Text_blue,Text_red,FontColor (in that order) in a specific trial.
     '''
+    global RepresetationsDecayRate, CognitiveControlDecayRate, ActivationRate, MonitorBiasActivationRate, InhibitionRate, BiasingMult, MaxIter, ActivationThreshold, BetweenTrialsInterval, CongruentStroop, IncongruentStroop, CongruentSentence, AnomalousSentence
     RepresetationsDecayRate, CognitiveControlDecayRate, ActivationRate, MonitorBiasActivationRate, InhibitionRate, BiasingMult, MaxIter, ActivationThreshold, BetweenTrialsInterval, CongruentStroop, IncongruentStroop, CongruentSentence, AnomalousSentence = params
 
     global CogCtrl, LingKnow, Stroop
