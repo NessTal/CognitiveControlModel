@@ -1,7 +1,12 @@
 import pandas as pd
+import numpy as np
+import itertools
+#import time
+
 import model as m
 
 file = 'data.csv'
+df = pd.read_csv(file)
 
 # parameters
 RepresetationsDecayRate = 0.01           # The number of activation units lost every iteration (from each Stroop/LangKnow node)
@@ -21,16 +26,52 @@ AnomalousSentence = (15,10,0,0,0,0)      # Activation of wk that supports SubjIs
 params = (RepresetationsDecayRate, CognitiveControlDecayRate, ActivationRate, MonitorBiasActivationRate, InhibitionRate, BiasingMult, MaxIter, ActivationThreshold, BetweenTrialsInterval, CongruentStroop, IncongruentStroop, CongruentSentence, AnomalousSentence)
 
 
-df = pd.read_csv(file)
-participant_trials_dict = df.groupby('Participant')['Trial'].apply(tuple).to_dict()
+def run_sim_for_human_data(df,params):
+    participant_trials_dict = df.groupby('Participant')['Trial'].apply(tuple).to_dict()
 
+    output = pd.DataFrame(columns=['Participant','Trial','Simulated RT'])
+    for p in participant_trials_dict.keys():
+        trials = [globals()[trial] for trial in participant_trials_dict[p]]
+        results = m.RunTrialSequence(trials,params)
+        simulated_RTs = [t[0] for t in results]
+        df_p = pd.DataFrame({'Participant':p,'Trial':trials,'Simulated RT':simulated_RTs})
+        output = pd.concat([output, df_p], axis=0)
 
-output = pd.DataFrame(columns=['Participant','Trial','Simulated RT'])
-for p in participant_trials_dict.keys():
-    trials = [globals()[trial] for trial in participant_trials_dict[p]]
-    results = m.RunTrialSequence(trials,params)
-    simulated_RTs = [t[0] for t in results]
-    df_p = pd.DataFrame({'Participant':p,'Trial':trials,'Simulated RT':simulated_RTs})
-    output = pd.concat([output, df_p], axis=0)
+    output.to_csv('output.csv')
+    return output
 
-output.to_csv('output.csv')
+possible_values = {
+    'RepresetationsDecayRate': [0.001,0.005,0.01,0.05,0.1],
+    'CognitiveControlDecayRate': [0.0001,0.0005,0.001,0.0025,0.005,0.0075,0.01],
+    'ActivationRate': [0.005,0.01,0.05,0.1,0.15,0.2],
+    'MonitorBiasActivationRate': [0.1,0.5,1],
+    'InhibitionRate': [0.005,0.01,0.05,0.1],
+    'BiasingMult': [0.000001,0.000005,0.00001,0.000015,0.00002,0.00005,0.0001,0.0005],
+    'ActivationThreshold': [100,1000]
+}
+
+def find_best_params(df,possible_values):
+    combinations = list(itertools.product(*possible_values.values()))
+    num_combs = len(combinations)
+    
+    failed = []
+
+    #start = time.time()
+    for i, current_params in enumerate(combinations):
+        RepresetationsDecayRate, CognitiveControlDecayRate, ActivationRate, MonitorBiasActivationRate, InhibitionRate, BiasingMult, ActivationThreshold = current_params
+        params = (RepresetationsDecayRate, CognitiveControlDecayRate, ActivationRate, MonitorBiasActivationRate, InhibitionRate, BiasingMult, MaxIter, ActivationThreshold, BetweenTrialsInterval, CongruentStroop, IncongruentStroop, CongruentSentence, AnomalousSentence)
+
+        col_name = "_".join([f"{param}={val}" for param, val in zip(possible_values.keys(), current_params)])
+        try:
+            df[col_name] = list(run_sim_for_human_data(df,params)['Simulated RT'])
+        except:
+            failed.append(col_name)
+            print('failed: ',col_name)
+        print('Finised running %2d of %2d' % (i,num_combs))
+    #end = time.time()
+    #print(end - start)
+    pd.to_pickle(df,'find_best_params_df.pkl')
+    return[df]
+    
+if __name__ == "__main__":
+    df_all = find_best_params(df,possible_values)

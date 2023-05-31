@@ -236,7 +236,7 @@ def RunTrial(InputAct:tuple,params,CC=None,LK=None,S=None):
     for key in ActivationLevels.keys():
         ActivationLevels[key].append(NodesDict[key])
     
-    print('BiasingMult = %2d' % BiasingMult)
+    # print('BiasingMult = %2f' % BiasingMult)
 
     while i <= MaxIter:
         UpdateAll(CogCtrl,LingKnow,Stroop)
