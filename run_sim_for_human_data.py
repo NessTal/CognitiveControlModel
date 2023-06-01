@@ -1,7 +1,8 @@
 import pandas as pd
 import numpy as np
 import itertools
-#import time
+import multiprocessing as mp
+import time
 
 import model as m
 
@@ -50,28 +51,52 @@ possible_values = {
     'ActivationThreshold': [100,1000]
 }
 
+
+def find_best_params_helper(args):
+    df, params, col_name = args
+    try:
+        simulated_rt = list(run_sim_for_human_data(df, params)['Simulated RT'])
+        return col_name, simulated_rt
+    except:
+        return None
+
+
 def find_best_params(df,possible_values):
     combinations = list(itertools.product(*possible_values.values()))
     num_combs = len(combinations)
-    
     failed = []
 
-    #start = time.time()
+    pool = mp.Pool(processes=4)
+    results = []
+
+    start = time.time()
     for i, current_params in enumerate(combinations):
         RepresetationsDecayRate, CognitiveControlDecayRate, ActivationRate, MonitorBiasActivationRate, InhibitionRate, BiasingMult, ActivationThreshold = current_params
         params = (RepresetationsDecayRate, CognitiveControlDecayRate, ActivationRate, MonitorBiasActivationRate, InhibitionRate, BiasingMult, MaxIter, ActivationThreshold, BetweenTrialsInterval, CongruentStroop, IncongruentStroop, CongruentSentence, AnomalousSentence)
 
         col_name = "_".join([f"{param}={val}" for param, val in zip(possible_values.keys(), current_params)])
-        try:
-            df[col_name] = list(run_sim_for_human_data(df,params)['Simulated RT'])
-        except:
+        results.append((df, params, col_name))
+
+    # Parallel processing
+    for col_name, simulated_rt in pool.map(find_best_params_helper, results):
+        if col_name is None:
             failed.append(col_name)
-            print('failed: ',col_name)
-        print('Finised running %2d of %2d' % (i,num_combs))
-    #end = time.time()
-    #print(end - start)
+            print('Failed running %2d of %2d: ' % (i, num_combs,col_name))
+        else:
+            df[col_name] = simulated_rt
+            print('Finished running %2d of %2d' % (i, num_combs))
+
+    pool.close()
+    pool.join()
+
+    end = time.time()
+    print(end - start)
     pd.to_pickle(df,'find_best_params_df.pkl')
     return[df]
-    
+
+
 if __name__ == "__main__":
     df_all = find_best_params(df,possible_values)
+
+
+# pd.read_pickle('find_best_params_df.pkl')
