@@ -2,7 +2,8 @@ import pandas as pd
 import numpy as np
 import itertools
 import multiprocessing as mp
-import time
+import pickle
+#import time
 
 import model as m
 
@@ -58,40 +59,61 @@ def find_best_params_helper(args):
         simulated_rt = list(run_sim_for_human_data(df, params)['Simulated RT'])
         return col_name, simulated_rt
     except:
-        return None
+        return col_name, None
 
 
 def find_best_params(df,possible_values):
     combinations = list(itertools.product(*possible_values.values()))
     num_combs = len(combinations)
+
+    combinations_divided = []
+    for i in range((num_combs // 5000) + 1):
+        start_index = i * 5000
+        end_index = (i + 1) * 5000
+        combinations_divided.append(combinations[start_index:end_index])
+
     failed = []
 
     pool = mp.Pool(processes=4)
     results = []
 
-    start = time.time()
-    for i, current_params in enumerate(combinations):
-        RepresetationsDecayRate, CognitiveControlDecayRate, ActivationRate, MonitorBiasActivationRate, InhibitionRate, BiasingMult, ActivationThreshold = current_params
-        params = (RepresetationsDecayRate, CognitiveControlDecayRate, ActivationRate, MonitorBiasActivationRate, InhibitionRate, BiasingMult, MaxIter, ActivationThreshold, BetweenTrialsInterval, CongruentStroop, IncongruentStroop, CongruentSentence, AnomalousSentence)
+    batch_num = 1
+ 
+    for combs in combinations_divided:
+        #start = time.time()
+        pool = mp.Pool(processes=4)
+        results = []
+        
+        for i, current_params in enumerate(combs):
+            RepresetationsDecayRate, CognitiveControlDecayRate, ActivationRate, MonitorBiasActivationRate, InhibitionRate, BiasingMult, ActivationThreshold = current_params
+            params = (RepresetationsDecayRate, CognitiveControlDecayRate, ActivationRate, MonitorBiasActivationRate, InhibitionRate, BiasingMult, MaxIter, ActivationThreshold, BetweenTrialsInterval, CongruentStroop, IncongruentStroop, CongruentSentence, AnomalousSentence)
 
-        col_name = "_".join([f"{param}={val}" for param, val in zip(possible_values.keys(), current_params)])
-        results.append((df, params, col_name))
+            col_name = "_".join([f"{param}={val}" for param, val in zip(possible_values.keys(), current_params)])
+            results.append((df, params, col_name))
 
-    # Parallel processing
-    for col_name, simulated_rt in pool.map(find_best_params_helper, results):
-        if col_name is None:
-            failed.append(col_name)
-            print('Failed running %2d of %2d: ' % (i, num_combs,col_name))
-        else:
-            df[col_name] = simulated_rt
-            print('Finished running %2d of %2d' % (i, num_combs))
+        # Parallel processing
+        for col_name, simulated_rt in pool.map(find_best_params_helper, results):
+            if simulated_rt is None:
+                failed.append(col_name)
+                df[col_name] = np.nan
+                print('Failed running', col_name)
+            else:
+                df[col_name] = simulated_rt
+                print('Finished running batch %2d' % (batch_num))
 
-    pool.close()
-    pool.join()
+        pool.close()
+        pool.join()
 
-    end = time.time()
-    print(end - start)
-    pd.to_pickle(df,'find_best_params_df.pkl')
+        batch_num += 1
+        
+        #end = time.time()
+        #print(end - start)
+        df = df.copy()
+        pd.to_pickle(df,'find_best_params_df.pkl')
+
+        with open('failed.pkl', 'wb') as file:
+            pickle.dump(failed, file)
+    
     return[df]
 
 
@@ -99,4 +121,6 @@ if __name__ == "__main__":
     df_all = find_best_params(df,possible_values)
 
 
-# pd.read_pickle('find_best_params_df.pkl')
+#df_all = pd.read_pickle('find_best_params_df.pkl')
+#with open('failed.pkl', 'rb') as file:
+#    failed = pickle.load(file)
