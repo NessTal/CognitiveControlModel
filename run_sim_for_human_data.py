@@ -3,6 +3,7 @@ import numpy as np
 import itertools
 import multiprocessing as mp
 import pickle
+import glob
 #import time
 
 import model as m
@@ -17,7 +18,7 @@ ActivationRate = 0.1                     # The relation between unit activation 
 MonitorBiasActivationRate = 1            # The relation between unit activation and the activation it exerts through excitatory connections
 InhibitionRate = 0.1                     # The relation between unit activation and the inhibition it exerts through inhibitory connections
 BiasingMult = 0.00002                    # The relation between Biasing unit activation level and how strongly it activates Stroop/Lang high-level nodes (in proportion to their activation levels)
-MaxIter = 5000                           # Maximum number of iterations (per trial)
+MaxIter = 2000                           # Maximum number of iterations (per trial)
 ActivationThreshold = 1000               # Threshold activation level for a lower-level unit to be cosidered the final interpratation
 BetweenTrialsInterval = 1.5              # Time (in seconds) between consecutive trials
 CongruentStroop = (0,0,0,10,0,15)        # Activation of font_color that supports Blue & text_blue that supports Blue
@@ -39,7 +40,7 @@ def run_sim_for_human_data(df,params):
         df_p = pd.DataFrame({'Participant':p,'Trial':trials,'Simulated RT':simulated_RTs})
         output = pd.concat([output, df_p], axis=0)
 
-    output.to_csv('output.csv')
+    #output.to_csv('output.csv')
     return output
 
 possible_values = {
@@ -66,61 +67,114 @@ def find_best_params(df,possible_values):
     combinations = list(itertools.product(*possible_values.values()))
     num_combs = len(combinations)
 
-    combinations_divided = []
-    for i in range((num_combs // 5000) + 1):
-        start_index = i * 5000
-        end_index = (i + 1) * 5000
-        combinations_divided.append(combinations[start_index:end_index])
+    pool = mp.Pool(processes=22)
 
+    #start = time.time()
     failed = []
-
-    pool = mp.Pool(processes=4)
     results = []
-
-    batch_num = 1
- 
-    for combs in combinations_divided:
-        #start = time.time()
-        pool = mp.Pool(processes=4)
-        results = []
-        
-        for i, current_params in enumerate(combs):
-            RepresetationsDecayRate, CognitiveControlDecayRate, ActivationRate, MonitorBiasActivationRate, InhibitionRate, BiasingMult, ActivationThreshold = current_params
-            params = (RepresetationsDecayRate, CognitiveControlDecayRate, ActivationRate, MonitorBiasActivationRate, InhibitionRate, BiasingMult, MaxIter, ActivationThreshold, BetweenTrialsInterval, CongruentStroop, IncongruentStroop, CongruentSentence, AnomalousSentence)
-
-            col_name = "_".join([f"{param}={val}" for param, val in zip(possible_values.keys(), current_params)])
-            results.append((df, params, col_name))
-
-        # Parallel processing
-        for col_name, simulated_rt in pool.map(find_best_params_helper, results):
-            if simulated_rt is None:
-                failed.append(col_name)
-                df[col_name] = np.nan
-                print('Failed running', col_name)
-            else:
-                df[col_name] = simulated_rt
-                print('Finished running batch %2d' % (batch_num))
-
-        pool.close()
-        pool.join()
-
-        batch_num += 1
-        
-        #end = time.time()
-        #print(end - start)
-        df = df.copy()
-        pd.to_pickle(df,'find_best_params_df.pkl')
-
-        with open('failed.pkl', 'wb') as file:
-            pickle.dump(failed, file)
     
-    return[df]
+    # Prepare a list of tuples to be passed to the pool
+    for i, current_params in enumerate(combinations):
+        RepresetationsDecayRate, CognitiveControlDecayRate, ActivationRate, MonitorBiasActivationRate, InhibitionRate, BiasingMult, ActivationThreshold = current_params
+        params = (RepresetationsDecayRate, CognitiveControlDecayRate, ActivationRate, MonitorBiasActivationRate, InhibitionRate, BiasingMult, MaxIter, ActivationThreshold, BetweenTrialsInterval, CongruentStroop, IncongruentStroop, CongruentSentence, AnomalousSentence)
+        col_name = "_".join([f"{param}={val}" for param, val in zip(possible_values.keys(), current_params)])
+        results.append((df, params, col_name))
 
+    i = 1
+    # Parallel processing
+    for col_name, simulated_rt in pool.imap_unordered(find_best_params_helper, results,chunksize=50): ########@
+        if simulated_rt is None:
+            failed.append(col_name)
+            df[col_name] = np.nan
+            print('Failed running', col_name)
+            i += 1
+        else:
+            df[col_name] = simulated_rt
+            print(f'Finished running {i} of {num_combs}')
+            i += 1
+        if i % 2500 == 0:
+            pd.to_pickle(df,f'find_best_params_df_{i}.pkl')
+            with open(f'failed_{i}.pkl', 'wb') as file:
+                pickle.dump(failed, file)
+            df = df[['Participant', 'Trial', 'Avg']]
+            failed = []
+    
+    #end = time.time()
+    #print(end - start)
+    pd.to_pickle(df,f'find_best_params_df__{i}.pkl')
+
+    with open(f'failed_{i}.pkl', 'wb') as file:
+        pickle.dump(failed, file)
+    
+    #df = df[['Participant', 'Trial', 'Avg']]
+
+    pool.close()
+    pool.join()
+    
+    return df
+
+
+file_names = 'find_best_params_df_g*.pkl'
+
+def combine_dfs_from_pickles():
+    # Find all .pkl files starting with 'find_best_params_df' in the current directory
+    file_paths = glob.glob(file_names)
+
+    # Initialize an empty list to store DataFrames
+    dfs = []
+    i = 1
+
+    # Iterate over each file path
+    for file_path in file_paths:
+        # Read the .pkl file into a DataFrame
+        df = pd.read_pickle(file_path)
+
+        # from all datasets exept for the first one, remove the columns 'Participant', 'Trial', 'Avg'
+        if i > 1:
+            df = df.drop(['Participant', 'Trial', 'Avg'], axis=1)
+        i += 1
+        dfs.append(df)
+
+    # Combine all DataFrames into a single DataFrame
+    combined_df = pd.concat(dfs,axis=1)
+
+    # Alert the user if an column name exists in more than one DataFrame
+    unique_columns = combined_df.columns.unique()
+    duplicate_columns = set()
+    
+    for column in unique_columns:
+        column_counts = sum(column in df.columns for df in dfs)
+        if column_counts != 1:
+            duplicate_columns.add(column)
+
+    if duplicate_columns:
+        print("Warning: Column name conflicts detected in the following columns:")
+        for column in duplicate_columns:
+            print(column)
+
+    # Write the combined DataFrame to a .pkl file
+    combined_df.to_pickle('find_best_params_df.pkl')
+
+
+
+def correlate_with_avg():
+    df_all = pd.read_pickle('find_best_params_df.pkl')    # get only collumns with an average above 300
+    df_critical_trials = df_all.dropna(subset=['Avg'])
+
+    # get only collumns with an average above 300
+    combined_df_4corr = combined_df.iloc[:, 3:]
+    combined_df_4corr = combined_df_4corr.loc[:, (combined_df_4corr.mean(axis=0) > 300)]
+    # concat the first three columns of combined_df with combined_df_4corr
+    combined_df_4corr = pd.concat([combined_df[['Participant','Trial','Avg']], combined_df_4corr], axis=1)
+
+    df_critical_trials_4corr = df_critical_trials.drop(['Participant', 'Trial'], axis=1)
+    correlation = df_critical_trials_4corr.corr()['Avg'].sort_values(ascending=False)
+    correlation.to_pickle('correlation.pkl')
+    return correlation
 
 if __name__ == "__main__":
     df_all = find_best_params(df,possible_values)
 
 
-#df_all = pd.read_pickle('find_best_params_df.pkl')
 #with open('failed.pkl', 'rb') as file:
 #    failed = pickle.load(file)
