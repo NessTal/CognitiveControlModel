@@ -158,22 +158,24 @@ def combine_dfs_from_pickles():
 
 
 def correlate_with_avg():
-    df_all = pd.read_pickle('find_best_params_df.pkl')    # get only collumns with an average above 300
+    df_all = pd.read_pickle('find_best_params_df.pkl')
     df_critical_trials = df_all.dropna(subset=['Avg'])
 
     # get only collumns with an average above 300
-    combined_df_4corr = combined_df.iloc[:, 3:]
-    combined_df_4corr = combined_df_4corr.loc[:, (combined_df_4corr.mean(axis=0) > 300)]
+    df_4corr = df_critical_trials.iloc[:, 3:]
+    df_4corr = df_4corr.loc[:, (df_4corr.mean(axis=0) > 100)]
     # concat the first three columns of combined_df with combined_df_4corr
-    combined_df_4corr = pd.concat([combined_df[['Participant','Trial','Avg']], combined_df_4corr], axis=1)
+    df_4corr = pd.concat([df_critical_trials[['Avg']], df_4corr], axis=1)
 
-    df_critical_trials_4corr = df_critical_trials.drop(['Participant', 'Trial'], axis=1)
-    correlation = df_critical_trials_4corr.corr()['Avg'].sort_values(ascending=False)
+    correlation = df_4corr.corr()['Avg'].sort_values(ascending=False)
     correlation.to_pickle('correlation.pkl')
     return correlation
 
+
 if __name__ == "__main__":
-    df_all = find_best_params(df,possible_values)
+    find_best_params(df,possible_values)
+    combine_dfs_from_pickles()
+    correlate_with_avg()
 
 
 #with open('failed.pkl', 'rb') as file:
