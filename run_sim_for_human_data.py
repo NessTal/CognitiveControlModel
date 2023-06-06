@@ -31,16 +31,17 @@ params = (RepresetationsDecayRate, CognitiveControlDecayRate, ActivationRate, Mo
 
 def run_sim_for_human_data(df,params):
     participant_trials_dict = df.groupby('Participant')['Trial'].apply(tuple).to_dict()
+    practice_trials = [CongruentStroop, IncongruentStroop, CongruentSentence, AnomalousSentence, CongruentStroop, CongruentSentence]
 
     output = pd.DataFrame(columns=['Participant','Trial','Simulated RT'])
     for p in participant_trials_dict.keys():
-        trials = [globals()[trial] for trial in participant_trials_dict[p]]
+        trials = practice_trials+[globals()[trial] for trial in participant_trials_dict[p]]
         results = m.RunTrialSequence(trials,params)
         simulated_RTs = [t[0] for t in results]
-        df_p = pd.DataFrame({'Participant':p,'Trial':trials,'Simulated RT':simulated_RTs})
+        simulated_RTs = simulated_RTs[6:]
+        df_p = pd.DataFrame({'Participant':p,'Trial':trials[6:],'Simulated RT':simulated_RTs})
         output = pd.concat([output, df_p], axis=0)
-
-    #output.to_csv('output.csv')
+    output.to_csv('output.csv')
     return output
 
 possible_values = {
@@ -156,7 +157,6 @@ def combine_dfs_from_pickles():
     combined_df.to_pickle('find_best_params_df.pkl')
 
 
-
 def correlate_with_avg():
     df_all = pd.read_pickle('find_best_params_df.pkl')
     df_critical_trials = df_all.dropna(subset=['Avg'])
@@ -174,3 +174,13 @@ if __name__ == "__main__":
 
 #with open('failed.pkl', 'rb') as file:
 #    failed = pickle.load(file)
+
+#correlations = pd.read_pickle('correlations.pkl')
+#top_10 = []
+#for col_name in correlations.index[:10]:
+#    params = {}
+#    pairs = col_name.split("_")
+#    for pair in pairs:
+#        param, val = pair.split("=")
+#        params[param] = val
+#    top_10.append(params)
