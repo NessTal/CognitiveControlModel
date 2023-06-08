@@ -28,8 +28,18 @@ AnomalousSentence = (15,10,0,0,0,0)      # Activation of wk that supports SubjIs
 
 params = (RepresetationsDecayRate, CognitiveControlDecayRate, ActivationRate, MonitorBiasActivationRate, InhibitionRate, BiasingMult, MaxIter, ActivationThreshold, BetweenTrialsInterval, CongruentStroop, IncongruentStroop, CongruentSentence, AnomalousSentence)
 
+possible_values = {
+    'RepresetationsDecayRate': [0.001,0.005,0.01,0.05,0.1],
+    'CognitiveControlDecayRate': [0.0001,0.0005,0.001,0.0025,0.005,0.0075,0.01],
+    'ActivationRate': [0.005,0.01,0.05,0.1,0.15,0.2],
+    'MonitorBiasActivationRate': [0.1,0.5,1],
+    'InhibitionRate': [0.005,0.01,0.05,0.1],
+    'BiasingMult': [0.000001,0.000005,0.00001,0.000015,0.00002,0.00005,0.0001,0.0005],
+    'ActivationThreshold': [100,1000]
+}
 
-def run_sim_for_human_data(df,params):
+
+def run_sim_for_human_data(df,params,save_csv=False):
     participant_trials_dict = df.groupby('Participant')['Trial'].apply(tuple).to_dict()
     practice_trials = [CongruentStroop, IncongruentStroop, CongruentSentence, AnomalousSentence, CongruentStroop, CongruentSentence]
 
@@ -41,18 +51,10 @@ def run_sim_for_human_data(df,params):
         simulated_RTs = simulated_RTs[6:]
         df_p = pd.DataFrame({'Participant':p,'Trial':trials[6:],'Simulated RT':simulated_RTs})
         output = pd.concat([output, df_p], axis=0)
-    output.to_csv('output.csv')
-    return output
 
-possible_values = {
-    'RepresetationsDecayRate': [0.001,0.005,0.01,0.05,0.1],
-    'CognitiveControlDecayRate': [0.0001,0.0005,0.001,0.0025,0.005,0.0075,0.01],
-    'ActivationRate': [0.005,0.01,0.05,0.1,0.15,0.2],
-    'MonitorBiasActivationRate': [0.1,0.5,1],
-    'InhibitionRate': [0.005,0.01,0.05,0.1],
-    'BiasingMult': [0.000001,0.000005,0.00001,0.000015,0.00002,0.00005,0.0001,0.0005],
-    'ActivationThreshold': [100,1000]
-}
+    if save_csv == True:
+        output.to_csv('output.csv')
+    return output
 
 
 def find_best_params_helper(args):
@@ -115,9 +117,9 @@ def find_best_params(df,possible_values):
     return df
 
 
-file_names = 'find_best_params_df_g*.pkl'
+file_names = 'find_best_params_df_*.pkl'
 
-def combine_dfs_from_pickles():
+def combine_dfs_from_pickles(file_names):
     # Find all .pkl files starting with 'find_best_params_df' in the current directory
     file_paths = glob.glob(file_names)
 
@@ -184,3 +186,48 @@ if __name__ == "__main__":
 #        param, val = pair.split("=")
 #        params[param] = val
 #    top_10.append(params)
+
+
+# df_all = pd.read_pickle('find_best_params_df.pkl')
+# def find_missing_params(df,possible_values):
+#     combinations = list(itertools.product(*possible_values.values()))
+#     col_names_all_combs = []
+#     for i, current_params in enumerate(combinations):
+#         col_name = "_".join([f"{param}={val}" for param, val in zip(possible_values.keys(), current_params)])
+#         col_names_all_combs.append(col_name)
+
+#     col_names_in_df = list(df.columns)
+#     missing_cols = list(set(col_names_all_combs) - set(col_names_in_df))
+    
+#     missing_params = []
+#     for col_name in missing_cols:
+#         params = []
+#         pairs = col_name.split("_")
+#         for pair in pairs:
+#             param, val = pair.split("=")
+#             params.append(float(val))
+#         missing_params.append(tuple(params))
+
+#     #######################################@
+#     df_1000 = pd.read_pickle('find_best_params_df_1000.pkl')
+#     df_1000_params = []
+#     for col_name in df_1000.columns:
+#         if col_name in ['Participant', 'Trial', 'Avg']:
+#             continue
+#         params = []
+#         pairs = col_name.split("_")
+#         for pair in pairs:
+#             param, val = pair.split("=")
+#             params.append(float(val))
+#         df_1000_params.append(tuple(params))
+#     missing_params = list(set(missing_params) - set(df_1000_params))
+#     #######################################@
+
+#     return missing_cols, missing_params
+
+# missing_cols, missing_params = find_missing_params(df_all,possible_values)
+# with open('missing_params.pkl', 'wb') as file:
+#     pickle.dump(missing_params, file)
+
+# with open('missing_params.pkl', 'rb') as file:
+#     missing_params = pickle.load(file)
