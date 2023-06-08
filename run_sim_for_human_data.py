@@ -4,6 +4,9 @@ import itertools
 import multiprocessing as mp
 import pickle
 import glob
+import random
+import math
+import plotly.express as px
 #import time
 
 import model as m
@@ -157,15 +160,59 @@ def combine_dfs_from_pickles(file_names):
 
     # Write the combined DataFrame to a .pkl file
     combined_df.to_pickle('find_best_params_df.pkl')
+    return combined_df
 
 
-def correlate_with_avg():
-    df_all = pd.read_pickle('find_best_params_df.pkl')
-    df_critical_trials = df_all.dropna(subset=['Avg'])
+df_file_name = 'find_best_params_df.pkl'
+test_proportion = 0.25
+def split_participants(df_file_name,test_proportion, seed=123):
+    df_all = pd.read_pickle(df_file_name)
+    participants = df_all['Participant'].unique()
+    random.seed(seed)
+    test_participants = random.sample(list(participants), k = math.ceil(test_proportion*len(participants)))
+    # split df_all such that df_test contains all rows with Participant in test_participants, and df_train contains the rest
+    df_test = df_all[df_all['Participant'].isin(test_participants)]
+    df_train = df_all[~df_all['Participant'].isin(test_participants)]
+    return df_train, df_test
+
+df_train, df_test = split_participants(df_file_name,test_proportion)
+
+def correlate_with_avg(df,correlations_file_name):
+    df_critical_trials = df.dropna(subset=['Avg'])
     df_4corr = df_critical_trials.iloc[:, 3:]
     correlations = df_4corr.corrwith(df_critical_trials['Avg']).sort_values(ascending=False)
-    correlations.to_pickle('correlations.pkl')
+    correlations.to_pickle(correlations_file_name)
     return correlations
+
+correlations_file_name = 'correlations_train.pkl'
+correlations_train = correlate_with_avg(df_train,correlations_file_name)
+winning_params = correlations_train.index[0]
+
+correlations_file_name = 'correlations_test.pkl'
+correlation_test = correlate_with_avg(df_test,correlations_file_name)[winning_params]
+
+def plot_correlation(df_file_name,winning_params):
+    df = pd.read_pickle(df_file_name)
+    df_critical_trials = df.dropna(subset=['Avg'])
+    plt = px.scatter(df_critical_trials, x=winning_params, y="Avg",
+                     trendline="ols",trendline_color_override="black")
+    plt.update_layout(xaxis_title='Simulated (iterations)', yaxis_title='P600 amplitude (uV)')
+    plt.show()
+    return plt
+
+
+def dict_winning_params(correlations_file_name):
+    correlations = pd.read_pickle(correlations_file_name)
+    top_10 = []
+    for col_name in correlations.index[:10]:
+        params = {}
+        pairs = col_name.split("_")
+        for pair in pairs:
+            param, val = pair.split("=")
+            params[param] = val
+        top_10.append(params)
+    return top_10
+
 
 
 if __name__ == "__main__":
@@ -209,18 +256,19 @@ if __name__ == "__main__":
 #         missing_params.append(tuple(params))
 
 #     #######################################@
-#     df_1000 = pd.read_pickle('find_best_params_df_1000.pkl')
-#     df_1000_params = []
-#     for col_name in df_1000.columns:
-#         if col_name in ['Participant', 'Trial', 'Avg']:
-#             continue
-#         params = []
-#         pairs = col_name.split("_")
-#         for pair in pairs:
-#             param, val = pair.split("=")
-#             params.append(float(val))
-#         df_1000_params.append(tuple(params))
-#     missing_params = list(set(missing_params) - set(df_1000_params))
+#     for file in ['find_best_params_df_1000.pkl','find_best_params_df_500_c.pkl','find_best_params_df_1000_c.pkl']:
+#         df_part = pd.read_pickle(file)
+#         df_part_params = []
+#         for col_name in df_part.columns:
+#             if col_name in ['Participant', 'Trial', 'Avg']:
+#                 continue
+#             params = []
+#             pairs = col_name.split("_")
+#             for pair in pairs:
+#                 param, val = pair.split("=")
+#                 params.append(float(val))
+#             df_part_params.append(tuple(params))
+#         missing_params = list(set(missing_params) - set(df_part_params))
 #     #######################################@
 
 #     return missing_cols, missing_params
