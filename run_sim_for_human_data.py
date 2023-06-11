@@ -67,7 +67,9 @@ def find_best_params_helper(args):
         simulated_rt = list(run_sim_for_human_data(df, params)['Simulated RT'])
         return col_name, simulated_rt
     except:
+        # This happens when activation values become too high (python rounds them to infinity, and subsequent calculations fail)
         return col_name, None
+    
 
 
 def find_best_params(df,possible_values):
@@ -278,9 +280,25 @@ if __name__ == "__main__":
 # with open('missing_params.pkl', 'rb') as file:
 #     missing_params = pickle.load(file)
 
+# def get_params_of_failed_runs(df_all):
+#     #ger col names of columns with NaN values
+#     col_names = df_all.columns[df_all.isna().any()].tolist()[1:]
+#     params_failed = []
+#     for col_name in col_names:
+#         params = []
+#         pairs = col_name.split("_")
+#         for pair in pairs:
+#             param, val = pair.split("=")
+#             params.append(float(val))
+#         params_failed.append(tuple(params))
+#     return params_failed
 
-with open('find_best_params_df.pkl', 'rb') as file:
-    df_all = pickle.load(file)
+# with open('params_failed.pkl', 'wb') as file:
+#     correlations_test = pickle.dump(params_failed,file)
+
+
+
+df_all = pd.read_pickle('find_best_params_df.pkl')
 
 with open('correlations_test.pkl', 'rb') as file:
     correlations_test = pickle.load(file)
