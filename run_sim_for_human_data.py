@@ -7,6 +7,7 @@ import glob
 import random
 import math
 import plotly.express as px
+from scipy import stats
 #import time
 
 import model as m
@@ -175,7 +176,7 @@ def split_participants(df_file_name,test_proportion, seed=123):
     df_train = df_all[~df_all['Participant'].isin(test_participants)]
     return df_train, df_test
 
-df_train, df_test = split_participants(df_file_name,test_proportion)
+#df_train, df_test = split_participants(df_file_name,test_proportion)
 
 def correlate_with_avg(df,correlations_file_name):
     df_critical_trials = df.dropna(subset=['Avg'])
@@ -184,15 +185,14 @@ def correlate_with_avg(df,correlations_file_name):
     correlations.to_pickle(correlations_file_name)
     return correlations
 
-correlations_file_name = 'correlations_train.pkl'
-correlations_train = correlate_with_avg(df_train,correlations_file_name)
-winning_params = correlations_train.index[0]
+#correlations_file_name = 'correlations_train.pkl'
+#correlations_train = correlate_with_avg(df_train,correlations_file_name)
+#winning_params = correlations_train.index[0]
 
-correlations_file_name = 'correlations_test.pkl'
-correlation_test = correlate_with_avg(df_test,correlations_file_name)[winning_params]
+#correlations_file_name = 'correlations_test.pkl'
+#correlation_test = correlate_with_avg(df_test,correlations_file_name)[winning_params]
 
-def plot_correlation(df_file_name,winning_params):
-    df = pd.read_pickle(df_file_name)
+def plot_correlation(df,winning_params):
     df_critical_trials = df.dropna(subset=['Avg'])
     plt = px.scatter(df_critical_trials, x=winning_params, y="Avg",
                      trendline="ols",trendline_color_override="black")
@@ -217,8 +217,6 @@ def dict_winning_params(correlations_file_name):
 
 if __name__ == "__main__":
     find_best_params(df,possible_values)
-    combine_dfs_from_pickles()
-    correlate_with_avg()
 
 
 #with open('failed.pkl', 'rb') as file:
@@ -279,3 +277,26 @@ if __name__ == "__main__":
 
 # with open('missing_params.pkl', 'rb') as file:
 #     missing_params = pickle.load(file)
+
+
+with open('find_best_params_df.pkl', 'rb') as file:
+    df_all = pickle.load(file)
+
+with open('correlations_test.pkl', 'rb') as file:
+    correlations_test = pickle.load(file)
+
+with open('correlations_train.pkl', 'rb') as file:
+    correlations_train = pickle.load(file)
+
+df_train, df_test = split_participants(df_file_name,test_proportion)
+
+winning_params = correlations_train.index[0]
+correlation_test = correlations_test[winning_params]
+df_critical_trials = df_all.dropna(subset=['Avg'])
+df_critical_trials_test = df_test.dropna(subset=['Avg'])
+fig = plot_correlation(df_critical_trials,winning_params)
+stat_result_test = stats.pearsonr(df_critical_trials_test[winning_params],df_critical_trials_test['Avg'])
+print(f"Pearson correlation on test trials: {stat_result_test[0]:.3f}, p-value: {stat_result_test[1]:.3f}")
+stat_result_all = stats.pearsonr(df_critical_trials[winning_params],df_critical_trials['Avg'])
+print(f"Pearson correlation on all trials: {stat_result[0]:.3f}, p-value: {stat_result[1]:.3f}")
+#print(f"Correlation between {winning_params} and Avg: {stat_result[0]:.3f}, p-value: {stat_result[1]:.3f}")
