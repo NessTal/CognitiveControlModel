@@ -4,206 +4,206 @@ import copy
 # Classes
 class CognitiveControl(object):
     def __init__(self):
-        self.ConflictMonitoring = 0
-        self.Biasing = 0
+        self.conflict_monitoring = 0
+        self.biasing = 0
  
-    def Update(self,LingKnow,Stoop):
+    def update(self,LingKnow,Stoop):
         # increase CM activity based on the ratio between SubjIsAgent & SubjIsTheme
-        if LingKnow.SubjIsAgent+LingKnow.SubjIsTheme > 0:
-            self.ConflictMonitoring += ActivationRate*1/(abs(LingKnow.SubjIsAgent-LingKnow.SubjIsTheme))
+        if LingKnow.subj_is_agent+LingKnow.subj_is_theme > 0:
+            self.conflict_monitoring += activation_rate*1/(abs(LingKnow.subj_is_agent-LingKnow.subj_is_theme))
         # increase CM activity based on the ratio between Blue & Red
-        if Stroop.Blue+Stroop.Red > 0:
-            self.ConflictMonitoring += ActivationRate*1/(abs(Stroop.Blue-Stroop.Red))
+        if Stroop.blue+Stroop.red > 0:
+            self.conflict_monitoring += activation_rate*1/(abs(Stroop.blue-Stroop.red))
         # increase B activation based on CM activation
-        self.Biasing += MonitorBiasActivationRate*self.ConflictMonitoring       
+        self.biasing += monitor_bias_activation_rate*self.conflict_monitoring       
         # decay
-        self.ConflictMonitoring -= CognitiveControlDecayRate
-        self.Biasing -= CognitiveControlDecayRate      
+        self.conflict_monitoring -= cognitive_control_decay_rate
+        self.biasing -= cognitive_control_decay_rate      
         # prevent negative activation values
-        if self.ConflictMonitoring < 0:
-            self.ConflictMonitoring = 0
-        if self.Biasing < 0:
-            self.Biasing = 0
+        if self.conflict_monitoring < 0:
+            self.conflict_monitoring = 0
+        if self.biasing < 0:
+            self.biasing = 0
     
-    def BetweenTrialsDecay(self):
-        self.ConflictMonitoring -= CognitiveControlDecayRate*BetweenTrialsInterval*1000
-        self.Biasing -= CognitiveControlDecayRate*BetweenTrialsInterval*1000
-        if self.ConflictMonitoring < 0:
-            self.ConflictMonitoring = 0
-        if self.Biasing < 0:
-            self.Biasing = 0
+    def between_trials_decay(self):
+        self.conflict_monitoring -= cognitive_control_decay_rate*between_trials_interval*1000
+        self.biasing -= cognitive_control_decay_rate*between_trials_interval*1000
+        if self.conflict_monitoring < 0:
+            self.conflict_monitoring = 0
+        if self.biasing < 0:
+            self.biasing = 0
 
 
             
 class LinguisticKnowledge(object):
-    def __init__(self, WorldAct=0, MorphSyntIngAct=0, MorphSyntEdAct=0):
+    def __init__(self, world_act=0, morphsynt_Ing_act=0, morphsynt_ed_act=0):
         # Higher-Level
-        self.WorldKnowledge = WorldAct
-        self.MorphoSyntacticKnowledge_ing = MorphSyntIngAct
-        self.MorphoSyntacticKnowledge_ed = MorphSyntEdAct
+        self.world_knowledge = world_act
+        self.morphosyntactic_knowledge_ing = morphsynt_Ing_act
+        self.morphosyntactic_knowledge_ed = morphsynt_ed_act
         # Lower-Level
-        self.SubjIsAgent = 0
-        self.SubjIsTheme = 0
+        self.subj_is_agent = 0
+        self.subj_is_theme = 0
         
-    def InputAct(self,WK,MSK_ing,MSK_ed):
-        self.WorldKnowledge += WK
-        self.MorphoSyntacticKnowledge_ing += MSK_ing
-        self.MorphoSyntacticKnowledge_ed += MSK_ed
+    def input_act(self,WK,MSK_ing,MSK_ed):
+        self.world_knowledge += WK
+        self.morphosyntactic_knowledge_ing += MSK_ing
+        self.morphosyntactic_knowledge_ed += MSK_ed
 
-    def Update(self,CogCtrl,Stoop):        
+    def update(self,CogCtrl,Stroop):        
         # save initial activations for calculations (to make sure all updating happens "at once")
-        WorldKnowledgeInitialAct = self.WorldKnowledge
-        MorphoSyntacticKnowledgeIngInitialAct = self.MorphoSyntacticKnowledge_ing
-        MorphoSyntacticKnowledgeEdInitialAct = self.MorphoSyntacticKnowledge_ed
-        SubjIsAgentInitialAct = self.SubjIsAgent
-        SubjIsThemeInitialAct = self.SubjIsTheme
+        world_knowledge_initial_act = self.world_knowledge
+        morphosyntactic_knowledge_ing_initial_act = self.morphosyntactic_knowledge_ing
+        morphosyntactic_knowledge_ed_initial_act = self.morphosyntactic_knowledge_ed
+        SubjIsAgentInitialAct = self.subj_is_agent
+        SubjIsThemeInitialAct = self.subj_is_theme
 
-        # increase WK & MSK activity based on CogCtrl.Biasing and their activation levels
-        self.WorldKnowledge += (WorldKnowledgeInitialAct*CogCtrl.Biasing*BiasingMult)
-        self.MorphoSyntacticKnowledge_ing += (MorphoSyntacticKnowledgeIngInitialAct*CogCtrl.Biasing*BiasingMult)        
-        self.MorphoSyntacticKnowledge_ed += (MorphoSyntacticKnowledgeEdInitialAct*CogCtrl.Biasing*BiasingMult)        
+        # increase WK & MSK activity based on CogCtrl.biasing and their activation levels
+        self.world_knowledge += (world_knowledge_initial_act*CogCtrl.biasing*biasing_mult)
+        self.morphosyntactic_knowledge_ing += (morphosyntactic_knowledge_ing_initial_act*CogCtrl.biasing*biasing_mult)        
+        self.morphosyntactic_knowledge_ed += (morphosyntactic_knowledge_ed_initial_act*CogCtrl.biasing*biasing_mult)        
         
         # increase SubjIsAgent & SubjIsTheme based on WK & MSK
-        self.SubjIsAgent += (MorphoSyntacticKnowledgeIngInitialAct*ActivationRate) # SubjIsAgent is supported by MSK_ing
-        self.SubjIsTheme += (MorphoSyntacticKnowledgeEdInitialAct*ActivationRate) # SubjIsTheme is supported by MSK_ed
-        self.SubjIsTheme += (WorldKnowledgeInitialAct*ActivationRate) # SubjIsTheme is supported by WN
+        self.subj_is_agent += (morphosyntactic_knowledge_ing_initial_act*activation_rate) # SubjIsAgent is supported by MSK_ing
+        self.subj_is_theme += (morphosyntactic_knowledge_ed_initial_act*activation_rate) # SubjIsTheme is supported by MSK_ed
+        self.subj_is_theme += (world_knowledge_initial_act*activation_rate) # SubjIsTheme is supported by WN
         
         # lateral inhibition between SubjIsAgent & SubjIsTheme
-        self.SubjIsAgent -= (SubjIsThemeInitialAct*InhibitionRate)
-        self.SubjIsTheme -= (SubjIsAgentInitialAct*InhibitionRate)
+        self.subj_is_agent -= (SubjIsThemeInitialAct*inhibition_rate)
+        self.subj_is_theme -= (SubjIsAgentInitialAct*inhibition_rate)
         
         # decay
-        self.WorldKnowledge -= RepresetationsDecayRate
-        self.MorphoSyntacticKnowledge_ing -= RepresetationsDecayRate
-        self.MorphoSyntacticKnowledge_ed -= RepresetationsDecayRate
-        self.SubjIsAgent -= RepresetationsDecayRate
-        self.SubjIsTheme -= RepresetationsDecayRate
+        self.world_knowledge -= represetations_decay_rate
+        self.morphosyntactic_knowledge_ing -= represetations_decay_rate
+        self.morphosyntactic_knowledge_ed -= represetations_decay_rate
+        self.subj_is_agent -= represetations_decay_rate
+        self.subj_is_theme -= represetations_decay_rate
         # prevent negative activation values
-        if self.WorldKnowledge < 0 :
-            self.WorldKnowledge = 0
-        if self.MorphoSyntacticKnowledge_ing <0:
-            self.MorphoSyntacticKnowledge_ing = 0
-        if self.MorphoSyntacticKnowledge_ed <0:
-            self.MorphoSyntacticKnowledge_ed = 0
-        if self.SubjIsAgent < 0:
-            self.SubjIsAgent = 0
-        if self.SubjIsTheme < 0:
-            self.SubjIsTheme = 0
+        if self.world_knowledge < 0 :
+            self.world_knowledge = 0
+        if self.morphosyntactic_knowledge_ing <0:
+            self.morphosyntactic_knowledge_ing = 0
+        if self.morphosyntactic_knowledge_ed <0:
+            self.morphosyntactic_knowledge_ed = 0
+        if self.subj_is_agent < 0:
+            self.subj_is_agent = 0
+        if self.subj_is_theme < 0:
+            self.subj_is_theme = 0
     
-    def BetweenTrialsDecay(self):
-        self.WorldKnowledge -= RepresetationsDecayRate*BetweenTrialsInterval*1000
-        self.MorphoSyntacticKnowledge_ing -= RepresetationsDecayRate*BetweenTrialsInterval*1000
-        self.MorphoSyntacticKnowledge_ed -= RepresetationsDecayRate*BetweenTrialsInterval*1000
-        self.SubjIsAgent -= RepresetationsDecayRate*BetweenTrialsInterval*1000
-        self.SubjIsTheme -= RepresetationsDecayRate*BetweenTrialsInterval*1000
-        if self.WorldKnowledge < 0 :
-            self.WorldKnowledge = 0
-        if self.MorphoSyntacticKnowledge_ing <0:
-            self.MorphoSyntacticKnowledge_ing = 0
-        if self.MorphoSyntacticKnowledge_ed <0:
-            self.MorphoSyntacticKnowledge_ed = 0
-        if self.SubjIsAgent < 0:
-            self.SubjIsAgent = 0
-        if self.SubjIsTheme < 0:
-            self.SubjIsTheme = 0
+    def between_trials_decay(self):
+        self.world_knowledge -= represetations_decay_rate*between_trials_interval*1000
+        self.morphosyntactic_knowledge_ing -= represetations_decay_rate*between_trials_interval*1000
+        self.morphosyntactic_knowledge_ed -= represetations_decay_rate*between_trials_interval*1000
+        self.subj_is_agent -= represetations_decay_rate*between_trials_interval*1000
+        self.subj_is_theme -= represetations_decay_rate*between_trials_interval*1000
+        if self.world_knowledge < 0 :
+            self.world_knowledge = 0
+        if self.morphosyntactic_knowledge_ing <0:
+            self.morphosyntactic_knowledge_ing = 0
+        if self.morphosyntactic_knowledge_ed <0:
+            self.morphosyntactic_knowledge_ed = 0
+        if self.subj_is_agent < 0:
+            self.subj_is_agent = 0
+        if self.subj_is_theme < 0:
+            self.subj_is_theme = 0
 
 
         
 class StroopTaskRepresentation(object):
-    def __init__(self, TextBlueAct=0, TextRedAct=0, FontColAct=0):
+    def __init__(self, text_blue_act=0, text_red_act=0, font_col_act=0):
         # Higher-Level
-        self.Text_blue = TextBlueAct
-        self.Text_red = TextRedAct
-        self.FontColor = FontColAct
+        self.text_blue = text_blue_act
+        self.text_red = text_red_act
+        self.font_color = font_col_act
         # Lower-Level
-        self.Blue = 0
-        self.Red = 0
+        self.blue = 0
+        self.red = 0
             
-    def InputAct(self,Text_blue,Text_red,FontColor):
-        self.Text_blue += Text_blue
-        self.Text_red += Text_red
-        self.FontColor += FontColor
+    def input_act(self,text_blue,text_red,font_color):
+        self.text_blue += text_blue
+        self.text_red += text_red
+        self.font_color += font_color
         
 
-    def Update(self,CogCtrl,LingKnow):
+    def update(self,CogCtrl,LingKnow):
         # save initial activations for calculations (to make sure all updating happens "at once")
-        TextBlueInitialAct = self.Text_blue
-        TextRedInitialAct = self.Text_red
-        FontColorInitialAct = self.FontColor
-        BlueInitialAct = self.Blue
-        RedInitialAct = self.Red
+        text_blue_initial_act = self.text_blue
+        text_red_initial_act = self.text_red
+        font_color_initial_act = self.font_color
+        blue_initial_act = self.blue
+        red_initial_act = self.red
         
-        # increase Text & FontColor activity based on CogCtrl.Biasing and their activation levels
-        self.Text_blue += (TextBlueInitialAct*CogCtrl.Biasing*BiasingMult)
-        self.Text_red += (TextRedInitialAct*CogCtrl.Biasing*BiasingMult)
-        self.FontColor += (FontColorInitialAct*CogCtrl.Biasing*BiasingMult)
+        # increase Text & FontColor activity based on CogCtrl.biasing and their activation levels
+        self.text_blue += (text_blue_initial_act*CogCtrl.biasing*biasing_mult)
+        self.text_red += (text_red_initial_act*CogCtrl.biasing*biasing_mult)
+        self.font_color += (font_color_initial_act*CogCtrl.biasing*biasing_mult)
 
         # increase Blue & Red based activity based on Text & FontColor
-        self.Blue += (FontColorInitialAct*ActivationRate) # Blue is supported by FontColor
-        self.Blue += (TextBlueInitialAct*ActivationRate) # Blue is supported by Text_blue
-        self.Red += (TextRedInitialAct*ActivationRate) # Red is supported by Text_red
+        self.blue += (font_color_initial_act*activation_rate) # Blue is supported by font_color
+        self.blue += (text_blue_initial_act*activation_rate) # Blue is supported by text_blue
+        self.red += (text_red_initial_act*activation_rate) # Red is supported by text_red
 
         # lateral inhibition between Blue & Red
-        self.Blue -= (RedInitialAct*InhibitionRate)
-        self.Red -= (BlueInitialAct*InhibitionRate)
+        self.blue -= (red_initial_act*inhibition_rate)
+        self.red -= (blue_initial_act*inhibition_rate)
         
         # decay
-        self.Text_blue -= RepresetationsDecayRate
-        self.Text_red -= RepresetationsDecayRate
-        self.FontColor -= RepresetationsDecayRate
-        self.Blue -= RepresetationsDecayRate
-        self.Red -= RepresetationsDecayRate
+        self.text_blue -= represetations_decay_rate
+        self.text_red -= represetations_decay_rate
+        self.font_color -= represetations_decay_rate
+        self.blue -= represetations_decay_rate
+        self.red -= represetations_decay_rate
         # prevent negative activation values
-        if self.Text_blue < 0:
-            self.Text_blue = 0
-        if self.Text_red < 0:
-            self.Text_red = 0
-        if self.FontColor <0:
-            self.FontColor = 0
-        if self.Blue < 0:
-            self.Blue = 0
-        if self.Red < 0:
-            self.Red = 0
+        if self.text_blue < 0:
+            self.text_blue = 0
+        if self.text_red < 0:
+            self.text_red = 0
+        if self.font_color <0:
+            self.font_color = 0
+        if self.blue < 0:
+            self.blue = 0
+        if self.red < 0:
+            self.red = 0
 
-    def BetweenTrialsDecay(self):
-        self.Text_blue -= RepresetationsDecayRate*BetweenTrialsInterval*1000
-        self.Text_red -= RepresetationsDecayRate*BetweenTrialsInterval*1000
-        self.FontColor -= RepresetationsDecayRate*BetweenTrialsInterval*1000
-        self.Blue -= RepresetationsDecayRate*BetweenTrialsInterval*1000
-        self.Red -= RepresetationsDecayRate*BetweenTrialsInterval*1000
-        if self.Text_blue < 0:
-            self.Text_blue = 0
-        if self.Text_red < 0:
-            self.Text_red = 0
-        if self.FontColor <0:
-            self.FontColor = 0
-        if self.Blue < 0:
-            self.Blue = 0
-        if self.Red < 0:
-            self.Red = 0
+    def between_trials_decay(self):
+        self.text_blue -= represetations_decay_rate*between_trials_interval*1000
+        self.text_red -= represetations_decay_rate*between_trials_interval*1000
+        self.font_color -= represetations_decay_rate*between_trials_interval*1000
+        self.blue -= represetations_decay_rate*between_trials_interval*1000
+        self.red -= represetations_decay_rate*between_trials_interval*1000
+        if self.text_blue < 0:
+            self.text_blue = 0
+        if self.text_red < 0:
+            self.text_red = 0
+        if self.font_color <0:
+            self.font_color = 0
+        if self.blue < 0:
+            self.blue = 0
+        if self.red < 0:
+            self.red = 0
 
         
 # Functions
-def UpdateAll(CogCtrl,LingKnow,Stroop):    
+def update_all(CogCtrl,LingKnow,Stroop):    
     CogCtrl_prev = copy.copy(CogCtrl)
     LingKnow_prev = copy.copy(LingKnow)
     Stroop_prev = copy.copy(Stroop)
     
-    CogCtrl.Update(LingKnow_prev,Stroop_prev)
-    LingKnow.Update(CogCtrl_prev,Stroop_prev)
-    Stroop.Update(CogCtrl_prev,LingKnow_prev)
+    CogCtrl.update(LingKnow_prev,Stroop_prev)
+    LingKnow.update(CogCtrl_prev,Stroop_prev)
+    Stroop.update(CogCtrl_prev,LingKnow_prev)
     return [CogCtrl, LingKnow, Stroop]
 
 
-def RunTrial(InputAct:tuple,params,CC=None,LK=None,S=None):
+def run_trial(input_act:tuple,params,CC=None,LK=None,S=None):
     '''
-    InputAct specifies the input activations for WK,MSK_ing,MSK_ed,Text_blue,Text_red,FontColor (in that order).
+    input_act specifies the input activations for WK,MSK_ing,MSK_ed,text_blue,text_red,font_color (in that order).
     '''
-    global RepresetationsDecayRate, CognitiveControlDecayRate, ActivationRate, MonitorBiasActivationRate, InhibitionRate, BiasingMult, MaxIter, ActivationThreshold, BetweenTrialsInterval, CongruentStroop, IncongruentStroop, CongruentSentence, AnomalousSentence
-    RepresetationsDecayRate, CognitiveControlDecayRate, ActivationRate, MonitorBiasActivationRate, InhibitionRate, BiasingMult, MaxIter, ActivationThreshold, BetweenTrialsInterval, CongruentStroop, IncongruentStroop, CongruentSentence, AnomalousSentence = params
+    global represetations_decay_rate, cognitive_control_decay_rate, activation_rate, monitor_bias_activation_rate, inhibition_rate, biasing_mult, max_iter, activation_threshold, between_trials_interval, congruent_stroop, incongruent_stroop, congruent_sentence, anomalous_sentence
+    represetations_decay_rate, cognitive_control_decay_rate, activation_rate, monitor_bias_activation_rate, inhibition_rate, biasing_mult, max_iter, activation_threshold, between_trials_interval, congruent_stroop, incongruent_stroop, congruent_sentence, anomalous_sentence = params
 
     i = 1
-    ActivationLevels = {'ConfMon':[],'Biasing':[],
+    activation_levels = {'ConfMon':[],'Biasing':[],
                         'WK':[],'MSK_ing':[],'MSK_ed':[],'SubjIsAgent':[],'SubjIsTheme':[],
                        'FontColor':[],'Text_blue':[],'Text_red':[],'Blue':[],'Red':[]}
 
@@ -227,51 +227,51 @@ def RunTrial(InputAct:tuple,params,CC=None,LK=None,S=None):
         Stroop = S
         
 
-    LingKnow.InputAct(InputAct[0],InputAct[1],InputAct[2])
-    Stroop.InputAct(InputAct[3],InputAct[4],InputAct[5])
+    LingKnow.input_act(input_act[0],input_act[1],input_act[2])
+    Stroop.input_act(input_act[3],input_act[4],input_act[5])
 
-    NodesDict = {'ConfMon':CogCtrl.ConflictMonitoring,'Biasing':CogCtrl.Biasing,
-                        'WK':LingKnow.WorldKnowledge,'MSK_ing':LingKnow.MorphoSyntacticKnowledge_ing,'MSK_ed':LingKnow.MorphoSyntacticKnowledge_ed,'SubjIsAgent':LingKnow.SubjIsAgent,'SubjIsTheme':LingKnow.SubjIsTheme,
-                       'FontColor':Stroop.FontColor,'Text_blue':Stroop.Text_blue,'Text_red':Stroop.Text_red,'Blue':Stroop.Blue,'Red':Stroop.Red}
-    for key in ActivationLevels.keys():
-        ActivationLevels[key].append(NodesDict[key])
+    nodes_dict = {'ConfMon':CogCtrl.conflict_monitoring,'Biasing':CogCtrl.biasing,
+                        'WK':LingKnow.world_knowledge,'MSK_ing':LingKnow.morphosyntactic_knowledge_ing,'MSK_ed':LingKnow.morphosyntactic_knowledge_ed,'SubjIsAgent':LingKnow.subj_is_agent,'SubjIsTheme':LingKnow.subj_is_theme,
+                       'FontColor':Stroop.font_color,'Text_blue':Stroop.text_blue,'Text_red':Stroop.text_red,'Blue':Stroop.blue,'Red':Stroop.red}
+    for key in activation_levels.keys():
+        activation_levels[key].append(nodes_dict[key])
     
-    # print('BiasingMult = %2f' % BiasingMult)
+    # print('biasing_mult = %2f' % biasing_mult)
 
-    while i <= MaxIter:
-        UpdateAll(CogCtrl,LingKnow,Stroop)
-        NodesDict = {'ConfMon':CogCtrl.ConflictMonitoring,'Biasing':CogCtrl.Biasing,
-                        'WK':LingKnow.WorldKnowledge,'MSK_ing':LingKnow.MorphoSyntacticKnowledge_ing,'MSK_ed':LingKnow.MorphoSyntacticKnowledge_ed,'SubjIsAgent':LingKnow.SubjIsAgent,'SubjIsTheme':LingKnow.SubjIsTheme,
-                       'FontColor':Stroop.FontColor,'Text_blue':Stroop.Text_blue,'Text_red':Stroop.Text_red,'Blue':Stroop.Blue,'Red':Stroop.Red}
-        for key in ActivationLevels.keys():
-            ActivationLevels[key].append(NodesDict[key])
+    while i <= max_iter:
+        update_all(CogCtrl,LingKnow,Stroop)
+        nodes_dict = {'ConfMon':CogCtrl.conflict_monitoring,'Biasing':CogCtrl.biasing,
+                        'WK':LingKnow.world_knowledge,'MSK_ing':LingKnow.morphosyntactic_knowledge_ing,'MSK_ed':LingKnow.morphosyntactic_knowledge_ed,'SubjIsAgent':LingKnow.subj_is_agent,'SubjIsTheme':LingKnow.subj_is_theme,
+                       'FontColor':Stroop.font_color,'Text_blue':Stroop.text_blue,'Text_red':Stroop.text_red,'Blue':Stroop.blue,'Red':Stroop.red}
+        for key in activation_levels.keys():
+            activation_levels[key].append(nodes_dict[key])
         i += 1
-        MaxAct = max(LingKnow.SubjIsAgent,LingKnow.SubjIsTheme,Stroop.Blue,Stroop.Red)
-        if MaxAct > ActivationThreshold:
+        max_act = max(LingKnow.subj_is_agent,LingKnow.subj_is_theme,Stroop.blue,Stroop.red)
+        if max_act > activation_threshold:
             break
     
     # determine the final interpratation
-    if [LingKnow.SubjIsAgent,LingKnow.SubjIsTheme,Stroop.Blue,Stroop.Red].count(MaxAct) > 1:
-        Winner = None
-    if LingKnow.SubjIsAgent == MaxAct:
-        Winner = 'SubjIsAgent'
-    if LingKnow.SubjIsTheme == MaxAct:
-        Winner = 'SubjIsTheme'
-    if Stroop.Blue == MaxAct:
-        Winner = 'Blue'
-    if Stroop.Red == MaxAct:
-        Winner = 'Red'
+    if [LingKnow.subj_is_agent,LingKnow.subj_is_theme,Stroop.blue,Stroop.red].count(max_act) > 1:
+        winner = None
+    if LingKnow.subj_is_agent == max_act:
+        winner = 'SubjIsAgent'
+    if LingKnow.subj_is_theme == max_act:
+        winner = 'SubjIsTheme'
+    if Stroop.blue == max_act:
+        winner = 'Blue'
+    if Stroop.red == max_act:
+        winner = 'Red'
     
-    return i, Winner, CogCtrl, LingKnow, Stroop, ActivationLevels
+    return i, winner, CogCtrl, LingKnow, Stroop, activation_levels
 
 
-def RunTrialSequence(Trials:"list of tuples",params):
+def run_trial_sequence(trials:"list of tuples",params):
     '''
-    Trials is a list of tuples.
-    Each tuple consists of 4 values that are the input activations of WK,MSK_ing,MSK_ed,Text_blue,Text_red,FontColor (in that order) in a specific trial.
+    trials is a list of tuples.
+    Each tuple consists of 4 values that are the input activations of WK,MSK_ing,MSK_ed,text_blue,text_red,font_color (in that order) in a specific trial.
     '''
-    global RepresetationsDecayRate, CognitiveControlDecayRate, ActivationRate, MonitorBiasActivationRate, InhibitionRate, BiasingMult, MaxIter, ActivationThreshold, BetweenTrialsInterval, CongruentStroop, IncongruentStroop, CongruentSentence, AnomalousSentence
-    RepresetationsDecayRate, CognitiveControlDecayRate, ActivationRate, MonitorBiasActivationRate, InhibitionRate, BiasingMult, MaxIter, ActivationThreshold, BetweenTrialsInterval, CongruentStroop, IncongruentStroop, CongruentSentence, AnomalousSentence = params
+    global represetations_decay_rate, cognitive_control_decay_rate, activation_rate, monitor_bias_activation_rate, inhibition_rate, biasing_mult, max_iter, activation_threshold, between_trials_interval, congruent_stroop, incongruent_stroop, congruent_sentence, anomalous_sentence
+    represetations_decay_rate, cognitive_control_decay_rate, activation_rate, monitor_bias_activation_rate, inhibition_rate, biasing_mult, max_iter, activation_threshold, between_trials_interval, congruent_stroop, incongruent_stroop, congruent_sentence, anomalous_sentence = params
 
     global CogCtrl, LingKnow, Stroop
 
@@ -280,11 +280,11 @@ def RunTrialSequence(Trials:"list of tuples",params):
     Stroop = StroopTaskRepresentation()
     
     Results = []
-    for Trial in Trials:
-        CogCtrl.BetweenTrialsDecay()
-        LingKnow.BetweenTrialsDecay()
-        Stroop.BetweenTrialsDecay()
-        i, Winner, CogCtrl, LingKnow, Stroop, Activations = RunTrial(Trial,params,CogCtrl,LingKnow,Stroop)
-        Results.append([i,Winner,Activations])
+    for trial in trials:
+        CogCtrl.between_trials_decay()
+        LingKnow.between_trials_decay()
+        Stroop.between_trials_decay()
+        i, winner, CogCtrl, LingKnow, Stroop, activations = run_trial(trial,params,CogCtrl,LingKnow,Stroop)
+        Results.append([i,winner,activations])
         
     return Results

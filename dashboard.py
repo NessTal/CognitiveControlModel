@@ -119,21 +119,21 @@ app.layout = html.Div([
      State('input-incongruent-stroop', 'value'),
      State('input-congruent-sentence', 'value'),
      State('input-anomalous-sentence', 'value')])
-def run_simulation(n_clicks, decay_rate, control_decay_rate, activation_rate, monitor_bias_activation_rate, inhibition_rate, biasing_mult,
-                   max_iter, activation_threshold, between_trials_interval,
-                   input_congruent_stroop, input_incongruent_stroop, input_congruent_sentence, input_anomalous_sentence):
+def run_simulation(n_clicks, decay_rate_input, control_decay_rate_input, activation_rate_input, monitor_bias_activation_rate_input, inhibition_rate_input, biasing_mult_input,
+                   max_iter_input, activation_threshold_input, between_trials_interval_input,
+                   congruent_stroop_input, incongruent_stroop_input, congruent_sentence_input, anomalous_sentence_input):
 
-    input_congruent_stroop = tuple(map(int,input_congruent_stroop.split(',')))
-    input_incongruent_stroop = tuple(map(int,input_incongruent_stroop.split(',')))
-    input_congruent_sentence = tuple(map(int,input_congruent_sentence.split(',')))
-    input_anomalous_sentence = tuple(map(int,input_anomalous_sentence.split(',')))
+    congruent_stroop_input = tuple(map(int,congruent_stroop_input.split(',')))
+    incongruent_stroop_input = tuple(map(int,incongruent_stroop_input.split(',')))
+    congruent_sentence_input = tuple(map(int,congruent_sentence_input.split(',')))
+    anomalous_sentence_input = tuple(map(int,anomalous_sentence_input.split(',')))
 
-    global RepresetationsDecayRate, CognitiveControlDecayRate, ActivationRate, MonitorBiasActivationRate, InhibitionRate, BiasingMult, MaxIter, ActivationThreshold, BetweenTrialsInterval, CongruentStroop, IncongruentStroop, CongruentSentence, AnomalousSentence
-    RepresetationsDecayRate, CognitiveControlDecayRate, ActivationRate, MonitorBiasActivationRate, InhibitionRate, BiasingMult, MaxIter, ActivationThreshold, BetweenTrialsInterval, CongruentStroop, IncongruentStroop, CongruentSentence, AnomalousSentence = decay_rate, control_decay_rate, activation_rate, monitor_bias_activation_rate ,inhibition_rate, biasing_mult, max_iter, activation_threshold, between_trials_interval, input_congruent_stroop, input_incongruent_stroop, input_congruent_sentence, input_anomalous_sentence
-    params = (RepresetationsDecayRate, CognitiveControlDecayRate, ActivationRate, MonitorBiasActivationRate, InhibitionRate, BiasingMult, MaxIter, ActivationThreshold, BetweenTrialsInterval, CongruentStroop, IncongruentStroop, CongruentSentence, AnomalousSentence)
-    iteration_graph = CreateFig_WithWithoutCC_Stroop(params)
-    accuracy_graph,act_cong_bias_graph,act_cong_agent_graph,act_cong_theme_graph,act_incong_bias_graph,act_incong_agent_graph,act_incong_theme_graph = CreateFig_WithWithoutCC_Lang(params)
-    reaction_time_graph = CreateFig_CrossTaskAdapt(params)
+    global represetations_decay_rate, cognitive_control_decay_rate, activation_rate, monitor_bias_activation_rate, inhibition_rate, biasing_mult, max_iter, activation_threshold, between_trials_interval, congruent_stroop, incongruent_stroop, congruent_sentence, anomalous_sentence
+    represetations_decay_rate, cognitive_control_decay_rate, activation_rate, monitor_bias_activation_rate, inhibition_rate, biasing_mult, max_iter, activation_threshold, between_trials_interval, congruent_stroop, incongruent_stroop, congruent_sentence, anomalous_sentence = decay_rate_input, control_decay_rate_input, activation_rate_input, monitor_bias_activation_rate_input ,inhibition_rate_input, biasing_mult_input, max_iter_input, activation_threshold_input, between_trials_interval_input, congruent_stroop_input, incongruent_stroop_input, congruent_sentence_input, anomalous_sentence_input
+    params = (represetations_decay_rate, cognitive_control_decay_rate, activation_rate, monitor_bias_activation_rate, inhibition_rate, biasing_mult, max_iter, activation_threshold, between_trials_interval, congruent_stroop, incongruent_stroop, congruent_sentence, anomalous_sentence)
+    iteration_graph = create_fig_with_withoutCC_stroop(params)
+    accuracy_graph,act_cong_bias_graph,act_cong_agent_graph,act_cong_theme_graph,act_incong_bias_graph,act_incong_agent_graph,act_incong_theme_graph = create_fig_with_withoutCC_lang(params)
+    reaction_time_graph = create_fig_crosstask_adapt(params)
     return iteration_graph, accuracy_graph, reaction_time_graph, act_cong_bias_graph,act_cong_agent_graph,act_cong_theme_graph,act_incong_bias_graph,act_incong_agent_graph,act_incong_theme_graph
 
 if __name__ == '__main__':

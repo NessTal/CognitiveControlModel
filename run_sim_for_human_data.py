@@ -16,21 +16,21 @@ file = 'data.csv'
 df = pd.read_csv(file)
 
 # parameters
-RepresetationsDecayRate = 0.01           # The number of activation units lost every iteration (from each Stroop/LangKnow node)
-CognitiveControlDecayRate = 0.005        # The number of activation units lost every iteration (from each CC node)
-ActivationRate = 0.1                     # The relation between unit activation and the activation it exerts through excitatory connections
-MonitorBiasActivationRate = 1            # The relation between unit activation and the activation it exerts through excitatory connections
-InhibitionRate = 0.1                     # The relation between unit activation and the inhibition it exerts through inhibitory connections
-BiasingMult = 0.00002                    # The relation between Biasing unit activation level and how strongly it activates Stroop/Lang high-level nodes (in proportion to their activation levels)
-MaxIter = 2000                           # Maximum number of iterations (per trial)
-ActivationThreshold = 1000               # Threshold activation level for a lower-level unit to be cosidered the final interpratation
-BetweenTrialsInterval = 1.5              # Time (in seconds) between consecutive trials
-CongruentStroop = (0,0,0,10,0,15)        # Activation of font_color that supports Blue & text_blue that supports Blue
-IncongruentStroop = (0,0,0,0,10,15)      # Activation of font_color that supports Blue & text_red that supports red
-CongruentSentence = (15,0,10,0,0,0)      # Activation of wk that supports SubjIsTheme & MSK_ed that supports SubjIsTheme
-AnomalousSentence = (15,10,0,0,0,0)      # Activation of wk that supports SubjIsTheme & MSK_ing that supports SubjIsAgent
+represetations_decay_rate = 0.01           # The number of activation units lost every iteration (from each Stroop/LangKnow node)
+cognitive_control_decay_rate = 0.005        # The number of activation units lost every iteration (from each CC node)
+activation_rate = 0.1                     # The relation between unit activation and the activation it exerts through excitatory connections
+monitor_bias_activation_rate = 1            # The relation between unit activation and the activation it exerts through excitatory connections
+inhibition_rate = 0.1                     # The relation between unit activation and the inhibition it exerts through inhibitory connections
+biasing_mult = 0.00002                    # The relation between Biasing unit activation level and how strongly it activates Stroop/Lang high-level nodes (in proportion to their activation levels)
+max_iter = 2000                           # Maximum number of iterations (per trial)
+activation_threshold = 1000               # Threshold activation level for a lower-level unit to be cosidered the final interpratation
+between_trials_interval = 1.5              # Time (in seconds) between consecutive trials
+congruent_stroop = (0,0,0,10,0,15)        # Activation of font_color that supports blue & text_blue that supports blue
+incongruent_stroop = (0,0,0,0,10,15)      # Activation of font_color that supports blue & text_red that supports red
+congruent_sentence = (15,0,10,0,0,0)      # Activation of wk that supports subj_is_theme & MSK_ed that supports subj_is_theme
+anomalous_sentence = (15,10,0,0,0,0)      # Activation of wk that supports subj_is_theme & MSK_ing that supports subj_is_agent
 
-params = (RepresetationsDecayRate, CognitiveControlDecayRate, ActivationRate, MonitorBiasActivationRate, InhibitionRate, BiasingMult, MaxIter, ActivationThreshold, BetweenTrialsInterval, CongruentStroop, IncongruentStroop, CongruentSentence, AnomalousSentence)
+params = (represetations_decay_rate, cognitive_control_decay_rate, activation_rate, monitor_bias_activation_rate, inhibition_rate, biasing_mult, max_iter, activation_threshold, between_trials_interval, congruent_stroop, incongruent_stroop, congruent_sentence, anomalous_sentence)
 
 possible_values = {
     'RepresetationsDecayRate': [0.001,0.005,0.01,0.05,0.1],
@@ -45,12 +45,12 @@ possible_values = {
 
 def run_sim_for_human_data(df,params,save_csv=False):
     participant_trials_dict = df.groupby('Participant')['Trial'].apply(tuple).to_dict()
-    practice_trials = [CongruentStroop, IncongruentStroop, CongruentSentence, AnomalousSentence, CongruentStroop, CongruentSentence]
+    practice_trials = [congruent_stroop, incongruent_stroop, congruent_sentence, anomalous_sentence, congruent_stroop, congruent_sentence]
 
     output = pd.DataFrame(columns=['Participant','Trial','Simulated RT'])
     for p in participant_trials_dict.keys():
         trials = practice_trials+[globals()[trial] for trial in participant_trials_dict[p]]
-        results = m.RunTrialSequence(trials,params)
+        results = m.run_trial_sequence(trials,params)
         simulated_RTs = [t[0] for t in results]
         simulated_RTs = simulated_RTs[6:]
         df_p = pd.DataFrame({'Participant':p,'Trial':trials[6:],'Simulated RT':simulated_RTs})
@@ -84,8 +84,8 @@ def find_best_params(df,possible_values):
     
     # Prepare a list of tuples to be passed to the pool
     for i, current_params in enumerate(combinations):
-        RepresetationsDecayRate, CognitiveControlDecayRate, ActivationRate, MonitorBiasActivationRate, InhibitionRate, BiasingMult, ActivationThreshold = current_params
-        params = (RepresetationsDecayRate, CognitiveControlDecayRate, ActivationRate, MonitorBiasActivationRate, InhibitionRate, BiasingMult, MaxIter, ActivationThreshold, BetweenTrialsInterval, CongruentStroop, IncongruentStroop, CongruentSentence, AnomalousSentence)
+        represetations_decay_rate, cognitive_control_decay_rate, activation_rate, monitor_bias_activation_rate, inhibition_rate, biasing_mult, activation_threshold = current_params
+        params = (represetations_decay_rate, cognitive_control_decay_rate, activation_rate, monitor_bias_activation_rate, inhibition_rate, biasing_mult, max_iter, activation_threshold, between_trials_interval, congruent_stroop, incongruent_stroop, congruent_sentence, anomalous_sentence)
         col_name = "_".join([f"{param}={val}" for param, val in zip(possible_values.keys(), current_params)])
         results.append((df, params, col_name))
 
