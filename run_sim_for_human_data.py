@@ -12,16 +12,16 @@ from scipy import stats
 
 import model as m
 
-file = 'data.csv'
+file = 'data_i.csv'
 df = pd.read_csv(file)
 
 # parameters
 represetations_decay_rate = 0.01           # The number of activation units lost every iteration (from each Stroop/LangKnow node)
-cognitive_control_decay_rate = 0.005        # The number of activation units lost every iteration (from each CC node)
+cognitive_control_decay_rate = 0.001        # The number of activation units lost every iteration (from each CC node)
 activation_rate = 0.1                     # The relation between unit activation and the activation it exerts through excitatory connections
-monitor_bias_activation_rate = 1            # The relation between unit activation and the activation it exerts through excitatory connections
-inhibition_rate = 0.1                     # The relation between unit activation and the inhibition it exerts through inhibitory connections
-biasing_mult = 0.00002                    # The relation between Biasing unit activation level and how strongly it activates Stroop/Lang high-level nodes (in proportion to their activation levels)
+monitor_bias_activation_rate = 0.1            # The relation between unit activation and the activation it exerts through excitatory connections
+inhibition_rate = 0.01                     # The relation between unit activation and the inhibition it exerts through inhibitory connections
+biasing_mult = 0.000001                    # The relation between Biasing unit activation level and how strongly it activates Stroop/Lang high-level nodes (in proportion to their activation levels)
 max_iter = 2000                           # Maximum number of iterations (per trial)
 activation_threshold = 1000               # Threshold activation level for a lower-level unit to be cosidered the final interpratation
 between_trials_interval = 1.5              # Time (in seconds) between consecutive trials
@@ -194,11 +194,11 @@ def correlate_with_avg(df,correlations_file_name):
 #correlations_file_name = 'correlations_test.pkl'
 #correlation_test = correlate_with_avg(df_test,correlations_file_name)[winning_params]
 
-def plot_correlation(df,winning_params):
+def plot_correlation(df,winning_params,title='P600 amplitude (uV)'):
     df_critical_trials = df.dropna(subset=['Avg'])
     plt = px.scatter(df_critical_trials, x=winning_params, y="Avg",
                      trendline="ols",trendline_color_override="black")
-    plt.update_layout(xaxis_title='Simulated (iterations)', yaxis_title='P600 amplitude (uV)')
+    plt.update_layout(xaxis_title='Simulated difficulty (iterations)', yaxis_title=title)
     plt.show()
     return plt
 
@@ -316,5 +316,10 @@ fig = plot_correlation(df_critical_trials,winning_params)
 stat_result_test = stats.pearsonr(df_critical_trials_test[winning_params],df_critical_trials_test['Avg'])
 print(f"Pearson correlation on test trials: {stat_result_test[0]:.3f}, p-value: {stat_result_test[1]:.3f}")
 stat_result_all = stats.pearsonr(df_critical_trials[winning_params],df_critical_trials['Avg'])
-print(f"Pearson correlation on all trials: {stat_result[0]:.3f}, p-value: {stat_result[1]:.3f}")
+print(f"Pearson correlation on all trials: {stat_result_all[0]:.3f}, p-value: {stat_result_all[1]:.3f}")
 #print(f"Correlation between {winning_params} and Avg: {stat_result[0]:.3f}, p-value: {stat_result[1]:.3f}")
+
+df_critical_trials_integrate = pd.read_csv('output.csv').dropna(subset=['Avg'])
+fig = plot_correlation(df_critical_trials_integrate,'Simulated RT',title='Anterion-Negativity amplitude (uV)')
+stat_result_integrate = stats.pearsonr(df_critical_trials_integrate['Simulated RT'],df_critical_trials_integrate['Avg'])
+print(f"Pearson correlation for Integrate group: {stat_result_integrate[0]:.3f}, p-value: {stat_result_integrate[1]:.3f}")
