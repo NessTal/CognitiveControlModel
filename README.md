@@ -1,7 +1,7 @@
 # CognitiveControlModel
 A computational implementation of the cognitive control model proposed in: Ness T., Langlois V., Kim A. E., &amp; Novick J. M. (under review). The ‘state’ of cognitive control in language processing.
 
-A dashboard to run simulation and observe the effect of different parameters in the model:
+To run simulation and observe the effect of different parameters in the model, use this dashboard:
 [https://tal-ness-cognitive-control-model.onrender.com/
 ](https://tal-ness-cognitive-control-model.onrender.com/)
 
